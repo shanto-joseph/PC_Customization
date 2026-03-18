@@ -1,0 +1,53 @@
+/* PC Builder Styles */
+.component-selector {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background-color: #fff;
+    transition: all 0.3s ease;
+}
+
+.component-selector:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.component-item {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.component-item:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff;
+}
+
+.component-item.selected {
+    border-color: #28a745;
+    background-color: #e8f5e9;
+}
+
+.compatibility-check {
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 0.25rem;
+}
+
+.compatibility-check.compatible {
+    background-color: #e8f5e9;
+    border: 1px solid #28a745;
+}
+
+.compatibility-check.incompatible {
+    background-color: #ffebee;
+    border: 1px solid #dc3545;
+}
+
+.build-summary {
+    position: sticky;
+    top: 2rem;
+}

@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% block title %}Order #{{ order.id }} | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Order Header -->
+    <div class="card bg-primary text-white shadow-lg border-0 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">Order #{{ order.id }}</h2>
+                    <p class="mb-0 opacity-75">Placed on {{ order.created_at|date:"F d, Y" }}</p>
+                </div>
+                <div class="text-end">
+                    <h3 class="mb-1">₹{{ order.total_amount }}</h3>
+                    <span class="badge bg-{% if order.status == 'pending' %}warning{% elif order.status == 'processing' %}info{% elif order.status == 'shipped' %}primary{% elif order.status == 'delivered' %}success{% else %}danger{% endif %} fs-6">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Order Items -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Order Items</h4>
+                </div>
+                <div class="card-body">
+                    {% for item in order.items.all %}
+                        <div class="order-item mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    {% if item.product.image %}
+                                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" 
+                                             class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                             style="width: 80px; height: 80px;">
+                                            <i class="fas fa-image text-muted fa-2x"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col">
+                                    <h5 class="mb-1">{{ item.product.name }}</h5>
+                                    <p class="text-muted mb-0">Unit Price: ₹{{ item.price }}</p>
+                                    <p class="text-muted mb-0">Quantity: {{ item.quantity }}</p>
+                                </div>
+                                <div class="col-auto">
+                                    <h5 class="mb-0">₹{{ item.get_total }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Order Summary -->
+                    <div class="border-top pt-3 mt-3">
+                        <div class="row justify-content-end">
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <span>₹{{ order.total_amount }}</span>
+                                </div>
+                                {% if order.coupon %}
+                                    <div class="d-flex justify-content-between mb-2 text-success">
+                                        <span>Discount ({{ order.coupon.code }}):</span>
+                                        <span>-₹{{ order.get_discount_amount }}</span>
+                                    </div>
+                                {% endif %}
+                                <div class="d-flex justify-content-between border-top pt-2">
+                                    <strong>Total:</strong>
+                                    <strong>₹{{ order.total_amount }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Timeline -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Order Timeline</h4>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item {% if order.status != 'cancelled' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Order Placed</h6>
+                                <p class="text-muted mb-0">{{ order.created_at|date:"M d, Y H:i" }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Processing</h6>
+                                <p class="text-muted mb-0">Order is being processed</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item {% if order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Shipped</h6>
+                                <p class="text-muted mb-0">Order has been shipped</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item {% if order.status == 'delivered' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Delivered</h6>
+                                <p class="text-muted mb-0">Order has been delivered</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Info Sidebar -->
+        <div class="col-lg-4">
+            <!-- Shipping Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Shipping Information</h4>
+                </div>
+                <div class="card-body">
+                    <h6>{{ order.user.get_full_name }}</h6>
+                    <p class="mb-1">{{ order.shipping_address.address_line1 }}</p>
+                    {% if order.shipping_address.address_line2 %}
+                        <p class="mb-1">{{ order.shipping_address.address_line2 }}</p>
+                    {% endif %}
+                    <p class="mb-1">{{ order.shipping_address.city }}, {{ order.shipping_address.state }}</p>
+                    <p class="mb-1">{{ order.shipping_address.postal_code }}</p>
+                    <p class="mb-0">{{ order.shipping_address.country }}</p>
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Payment Information</h4>
+                </div>
+                <div class="card-body">
+                    {% with payment=order.payment_set.first %}
+                        {% if payment %}
+                            <p class="mb-1"><strong>Payment Method:</strong> {{ payment.get_payment_method_display }}</p>
+                            <p class="mb-0"><strong>Payment Status:</strong> 
+                                <span class="badge bg-{% if payment.status == 'completed' %}success{% elif payment.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                    {{ payment.get_status_display }}
+                                </span>
+                            </p>
+                            <p class="mb-0"><strong>Payment Date:</strong> {{ payment.created_at|date:"M d, Y H:i" }}</p>
+                        {% else %}
+                            <p class="text-muted mb-0">No payment information available</p>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if order.status == 'delivered' %}
+                            <a href="{% url 'reviews:add_review' order.id %}" class="btn btn-primary">
+                                <i class="fas fa-star me-2"></i>Write a Review
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'support:create_ticket' %}?order={{ order.id }}" class="btn btn-outline-primary">
+                            <i class="fas fa-headset me-2"></i>Need Help?
+                        </a>
+                        {% if order.status == 'delivered' %}
+                            <button class="btn btn-success" onclick="generateInvoice()">
+                                <i class="fas fa-download me-2"></i>Download Invoice
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    width: 2px;
+    background: #e9ecef;
+    top: 0;
+    bottom: 0;
+    left: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 50px;
+    padding-bottom: 30px;
+}
+
+.timeline-point {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 13px;
+    border: 2px solid #e9ecef;
+    background: #fff;
+    border-radius: 50%;
+}
+
+.timeline-item.active .timeline-point {
+    border-color: #28a745;
+    background: #28a745;
+}
+
+.timeline-content {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.timeline-item.active .timeline-content {
+    background: #e8f5e9;
+}
+</style>
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+function generateInvoice() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFillColor(41, 45, 62);
+    doc.rect(0, 0, 210, 40, 'F');
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Invoice', 20, 25);
+
+    doc.setFontSize(12);
+    doc.text('PC Customization Shop', 150, 15, { align: 'right' });
+    doc.setFontSize(10);
+    doc.text('123 Tech Street', 150, 22, { align: 'right' });
+    doc.text('Digital City', 150, 29, { align: 'right' });
+    doc.text('ZIP: 123456', 150, 36, { align: 'right' });
+
+    // Invoice Details
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Invoice #: {{ order.id }}`, 20, 55);
+    doc.text(`Date: {{ order.created_at|date:"F d, Y" }}`, 20, 62);
+
+    // Customer Details
+    doc.text('Bill To:', 20, 75);
+    doc.setFont("helvetica", "normal");
+    doc.text('{{ order.user.get_full_name }}', 20, 82);
+    doc.text('{{ order.shipping_address.address_line1 }}', 20, 89);
+    {% if order.shipping_address.address_line2 %}
+        doc.text('{{ order.shipping_address.address_line2 }}', 20, 96);
+    {% endif %}
+    doc.text('{{ order.shipping_address.city }}, {{ order.shipping_address.state }}', 20, 103);
+    doc.text('{{ order.shipping_address.postal_code }}', 20, 110);
+
+    // Items Table
+    const items = [
+        {% for item in order.items.all %}
+            ['{{ item.product.name }}', '{{ item.quantity }}', '₹{{ item.price }}', '₹{{ item.get_total }}'],
+        {% endfor %}
+    ];
+
+    doc.autoTable({
+        startY: 120,
+        head: [['Item', 'Quantity', 'Price', 'Total']],
+        body: items,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 45, 62] },
+        foot: [[
+            'Total',
+            '',
+            '',
+            '₹{{ order.total_amount }}'
+        ]],
+        footStyles: { fillColor: [41, 45, 62] }
+    });
+
+    // Save PDF
+    doc.save(`invoice-order-{{ order.id }}.pdf`);
+}
+</script>
+{% endblock %}
+{% endblock %}

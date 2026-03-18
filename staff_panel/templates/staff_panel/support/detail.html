@@ -1,0 +1,201 @@
+{% extends 'staff_panel/base.html' %}
+
+{% block staff_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Ticket #{{ ticket.id }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'staff_panel:support_tickets' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Tickets
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Ticket Messages -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ ticket.subject }}</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Original Message -->
+                    <div class="ticket-message mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ ticket.user.get_full_name }}</strong>
+                                <span class="text-muted ms-2">{{ ticket.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="message-content bg-light p-3 rounded">
+                            {{ ticket.message }}
+                        </div>
+                    </div>
+
+                    <!-- Responses -->
+                    {% for response in ticket.responses.all %}
+                    <div class="ticket-message mb-4 {% if response.user.is_staff_member %}ms-4{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ response.user.get_full_name }}</strong>
+                                <span class="text-muted ms-2">{{ response.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="message-content {% if response.user.is_staff_member %}bg-primary text-white{% else %}bg-light{% endif %} p-3 rounded">
+                            {{ response.message }}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Reply Form -->
+                    {% if ticket.status != 'closed' %}
+                    <form method="post" action="{% url 'staff_panel:respond_to_ticket' ticket.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Your Response</label>
+                            <textarea name="message" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Response</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Info & Status -->
+        <div class="col-md-4">
+            <!-- Ticket Status -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Ticket Status</h5>
+                </div>
+                <div class="card-body">
+                    <form id="ticketStatusUpdateForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Current Status</label>
+                            <select name="status" id="ticketStatusSelect" class="form-select">
+                                <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+                                <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                                <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="updateTicketStatusBtn">
+                            <span class="btn-text">Update Status</span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ ticket.user.get_full_name }}</p>
+                    <p><strong>Email:</strong> {{ ticket.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ ticket.user.phone_number|default:"Not provided" }}</p>
+                </div>
+            </div>
+
+            <!-- Related Order -->
+            {% if ticket.order %}
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Related Order</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Order ID:</strong> #{{ ticket.order.id }}</p>
+                    <p><strong>Order Date:</strong> {{ ticket.order.created_at|date:"M d, Y" }}</p>
+                    <p><strong>Order Status:</strong> {{ ticket.order.get_status_display }}</p>
+                    <a href="{% url 'staff_panel:order_detail' ticket.order.id %}" class="btn btn-outline-primary btn-sm">
+                        View Order Details
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ticketStatusForm = document.getElementById('ticketStatusUpdateForm');
+    const updateBtn = document.getElementById('updateTicketStatusBtn');
+    const btnText = updateBtn.querySelector('.btn-text');
+    const spinner = updateBtn.querySelector('.spinner-border');
+    
+    ticketStatusForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(ticketStatusForm);
+        const status = formData.get('status');
+        
+        // Show loading state
+        updateBtn.disabled = true;
+        btnText.textContent = 'Updating...';
+        spinner.classList.remove('d-none');
+        
+        fetch('{% url "staff_panel:update_ticket_status" ticket.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                status: status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Ticket status updated successfully!', 'success');
+                // Update the page to reflect the new status
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification(data.message || 'Failed to update ticket status', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while updating the status', 'error');
+        })
+        .finally(() => {
+            // Reset button state
+            updateBtn.disabled = false;
+            btnText.textContent = 'Update Status';
+            spinner.classList.add('d-none');
+        });
+    });
+});
+
+function showNotification(message, type = 'success') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

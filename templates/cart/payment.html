@@ -1,0 +1,395 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Payment | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Shipping Address Display -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Shipping Address</h4>
+                </div>
+                <div class="card-body">
+                    <strong>{{ shipping_address.address_line1 }}</strong><br>
+                    {% if shipping_address.address_line2 %}{{ shipping_address.address_line2 }}<br>{% endif %}
+                    {{ shipping_address.city }}, {{ shipping_address.state }}<br>
+                    {{ shipping_address.postal_code }}<br>
+                    {{ shipping_address.country }}
+                </div>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Payment</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Order Summary -->
+                    <div class="mb-4">
+                        <h5>Order Summary</h5>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tbody>
+                                    {% for item in cart.cartitem_set.all %}
+                                    <tr>
+                                        <td>{{ item.product.name }} × {{ item.quantity }}</td>
+                                        <td class="text-end">₹{{ item.get_total }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if cart.coupon %}
+                                    <tr class="text-success">
+                                        <td>Discount ({{ cart.coupon.code }})</td>
+                                        <td class="text-end">-₹{{ cart.get_discount_amount }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-end"><strong>Total Amount:</strong></td>
+                                        <td class="text-end"><strong>₹{{ cart.get_cart_total }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Payment Method Selection -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Select Payment Method</h5>
+                        
+                        <form method="post" id="paymentForm">
+                            {% csrf_token %}
+                            
+                            <!-- Razorpay Option -->
+                            <div class="card mb-3 payment-option" style="cursor: pointer;" onclick="selectPaymentMethod('razorpay')">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="razorpay" value="razorpay" checked>
+                                        <label class="form-check-label w-100" for="razorpay">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong>Razorpay Payment Gateway</strong>
+                                                    <p class="text-muted small mb-0">
+                                                        <i class="fas fa-lock me-1"></i>
+                                                        Credit/Debit Cards, UPI, NetBanking & More
+                                                    </p>
+                                                </div>
+                                                <img src="https://razorpay.com/assets/razorpay-glyph.svg" alt="Razorpay" style="height: 30px;">
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Credit Card Option -->
+                            <div class="card mb-3 payment-option" style="cursor: pointer;" onclick="selectPaymentMethod('credit_card')">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="credit_card" value="credit_card">
+                                        <label class="form-check-label w-100" for="credit_card">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong>Credit Card (Demo)</strong>
+                                                    <p class="text-muted small mb-0">
+                                                        <i class="fas fa-credit-card me-1"></i>
+                                                        Pay securely with your credit card
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <i class="fab fa-cc-visa fa-2x text-primary me-1"></i>
+                                                    <i class="fab fa-cc-mastercard fa-2x text-danger"></i>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Secure Payment Processing</strong><br>
+                                Your payment will be processed securely using industry-standard encryption.
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-primary btn-lg" id="paymentButton">
+                                    <i class="fas fa-lock me-2"></i>Pay ₹{{ cart.get_cart_total }} Securely
+                                </button>
+                                <a href="{% url 'cart:checkout' %}" class="btn btn-outline-secondary">
+                                    Back to Checkout
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Credit Card Modal -->
+<div class="modal fade" id="creditCardModal" tabindex="-1" aria-labelledby="creditCardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="creditCardModalLabel">
+                    <i class="fas fa-credit-card me-2"></i>Enter Card Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="creditCardForm">
+                    <div class="mb-3">
+                        <label for="cardNumber" class="form-label">Card Number</label>
+                        <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                        <div class="invalid-feedback">Please enter a valid card number</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cardName" class="form-label">Cardholder Name</label>
+                        <input type="text" class="form-control" id="cardName" placeholder="John Doe" required>
+                        <div class="invalid-feedback">Please enter cardholder name</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="expiryDate" class="form-label">Expiry Date</label>
+                            <input type="text" class="form-control" id="expiryDate" placeholder="MM/YY" maxlength="5" required>
+                            <div class="invalid-feedback">Please enter expiry date</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cvv" class="form-label">CVV</label>
+                            <input type="text" class="form-control" id="cvv" placeholder="123" maxlength="3" required>
+                            <div class="invalid-feedback">Please enter CVV</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info small mb-0">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Your payment information is secure and encrypted.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitCardPayment">
+                    <i class="fas fa-lock me-2"></i>Pay ₹{{ cart.get_cart_total }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    #creditCardModal .form-control:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+    }
+    
+    #creditCardModal .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    #creditCardModal .btn-close {
+        filter: brightness(0) invert(1);
+    }
+    
+    .payment-option {
+        transition: all 0.3s ease;
+        border: 2px solid #dee2e6;
+    }
+    
+    .payment-option:hover {
+        border-color: #4f46e5 !important;
+        box-shadow: 0 0 10px rgba(79, 70, 229, 0.2);
+    }
+    
+    .payment-option.border-primary {
+        border-color: #4f46e5 !important;
+        box-shadow: 0 0 10px rgba(79, 70, 229, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    // Configuration variables from Django
+    const RAZORPAY_KEY = '{{ razorpay_key_id }}';
+    const CART_TOTAL = {{ cart.get_cart_total|floatformat:2 }};
+    const USER_NAME = '{{ user.get_full_name|escapejs }}';
+    const USER_EMAIL = '{{ user.email|escapejs }}';
+    const USER_PHONE = '{{ user.phone|default:""|escapejs }}';
+
+    function selectPaymentMethod(method) {
+        document.getElementById(method).checked = true;
+        
+        // Update payment options styling
+        document.querySelectorAll('.payment-option').forEach(option => {
+            option.classList.remove('border-primary');
+        });
+        document.getElementById(method).closest('.payment-option').classList.add('border-primary');
+    }
+
+    // Payment Button Click Handler
+    document.getElementById('paymentButton').addEventListener('click', function() {
+        const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        
+        if (selectedMethod === 'razorpay') {
+            processRazorpayPayment();
+        } else if (selectedMethod === 'credit_card') {
+            processCreditCardPayment();
+        }
+    });
+
+    function processRazorpayPayment() {
+        const options = {
+            key: RAZORPAY_KEY,
+            amount: Math.round(CART_TOTAL * 100), // Amount in paise
+            currency: 'INR',
+            name: 'PC Customization Shop',
+            description: 'Order Payment',
+            handler: function(response) {
+                // Payment successful
+                submitPaymentForm('razorpay', {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                });
+            },
+            prefill: {
+                name: USER_NAME,
+                email: USER_EMAIL,
+                contact: USER_PHONE
+            },
+            theme: {
+                color: '#4f46e5'
+            },
+            modal: {
+                ondismiss: function() {
+                    console.log('Payment cancelled by user');
+                }
+            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function(response) {
+            alert('Payment failed: ' + response.error.description);
+        });
+        rzp.open();
+    }
+
+    function processCreditCardPayment() {
+        // Show credit card modal
+        const modal = new bootstrap.Modal(document.getElementById('creditCardModal'));
+        modal.show();
+    }
+
+    // Handle credit card form submission
+    document.getElementById('submitCardPayment').addEventListener('click', function() {
+        const form = document.getElementById('creditCardForm');
+        
+        // Basic validation
+        const cardNumber = document.getElementById('cardNumber').value;
+        const cardName = document.getElementById('cardName').value;
+        const expiryDate = document.getElementById('expiryDate').value;
+        const cvv = document.getElementById('cvv').value;
+
+        if (!cardNumber || !cardName || !expiryDate || !cvv) {
+            alert('Please fill in all card details');
+            return;
+        }
+
+        // Close modal and submit payment
+        const modal = bootstrap.Modal.getInstance(document.getElementById('creditCardModal'));
+        modal.hide();
+        
+        submitPaymentForm('credit_card', {
+            card_number: cardNumber,
+            card_name: cardName,
+            expiry_date: expiryDate,
+            cvv: cvv
+        });
+    });
+
+    function submitPaymentForm(paymentMethod, paymentData = {}) {
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        // Add payment method
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = 'payment_method';
+        methodInput.value = paymentMethod;
+        form.appendChild(methodInput);
+        
+        // Add payment data
+        for (const [key, value] of Object.entries(paymentData)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            form.appendChild(input);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Card number formatting
+    document.getElementById('cardNumber').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\s/g, '');
+        let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+        e.target.value = formattedValue;
+    });
+
+    // Expiry date formatting
+    document.getElementById('expiryDate').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 2) {
+            value = value.slice(0, 2) + '/' + value.slice(2, 4);
+        }
+        e.target.value = value;
+    });
+
+    // CVV - numbers only
+    document.getElementById('cvv').addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    });
+
+    // Add hover effects to payment options
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.payment-option').forEach(option => {
+            option.addEventListener('mouseenter', function() {
+                if (!this.querySelector('input[type="radio"]').checked) {
+                    this.style.borderColor = '#4f46e5';
+                    this.style.boxShadow = '0 0 10px rgba(79, 70, 229, 0.2)';
+                }
+            });
+            
+            option.addEventListener('mouseleave', function() {
+                if (!this.querySelector('input[type="radio"]').checked) {
+                    this.style.borderColor = '#dee2e6';
+                    this.style.boxShadow = 'none';
+                }
+            });
+        });
+        
+        // Initialize first option as selected
+        selectPaymentMethod('razorpay');
+    });
+</script>
+{% endblock %}

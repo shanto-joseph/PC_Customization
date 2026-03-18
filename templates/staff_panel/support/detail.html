@@ -1,0 +1,110 @@
+{% extends 'staff_panel/base.html' %}
+
+{% block staff_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Support Ticket #{{ ticket.id }}</h1>
+        <a href="{% url 'staff_panel:support_tickets' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Tickets
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Ticket Messages -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ ticket.subject }}</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Original Message -->
+                    <div class="ticket-message mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ ticket.user.get_full_name }}</strong>
+                                <span class="text-muted ms-2">{{ ticket.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="message-content bg-light p-3 rounded">
+                            {{ ticket.message }}
+                        </div>
+                    </div>
+
+                    <!-- Responses -->
+                    {% for response in ticket.responses.all %}
+                    <div class="ticket-message mb-4 {% if response.user.is_staff_member %}ms-4{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ response.user.get_full_name }}</strong>
+                                <span class="text-muted ms-2">{{ response.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="message-content {% if response.user.is_staff_member %}bg-primary text-white{% else %}bg-light{% endif %} p-3 rounded">
+                            {{ response.message }}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Reply Form -->
+                    {% if ticket.status != 'closed' %}
+                    <form method="post" action="{% url 'staff_panel:respond_to_ticket' ticket.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Your Response</label>
+                            <textarea name="message" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Response</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Info & Status -->
+        <div class="col-md-4">
+            <!-- Ticket Status -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Ticket Status</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'staff_panel:update_ticket_status' ticket.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Current Status</label>
+                            <select name="status" class="form-select">
+                                <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+                                <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                                <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Update Status</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ ticket.user.get_full_name }}</p>
+                    <p><strong>Email:</strong> {{ ticket.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ ticket.user.phone_number|default:"Not provided" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

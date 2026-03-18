@@ -1,0 +1,15 @@
+
+Django==5.0.1                            # Django Framework
+mysqlclient==2.2.1                       # Database
+python-dotenv==1.0.0                     # Environment Variables
+djangorestframework==3.14.0              # REST Framework
+django-crispy-forms==2.1                 # Forms
+crispy-bootstrap5
+razorpay==1.4.1                          # Payment Gateway
+google-generativeai==0.3.2               # AI/ML - Google Gemini
+Pillow==10.2.0                           # Image Processing
+python-dateutil==2.8.2                   # Utilities
+cryptography==41.0.7                     # Security
+gunicorn==21.2.0                         # Production Server (Optional)
+whitenoise==6.6.0
+django-debug-toolbar==4.2.0              # Development Tools (Optional)

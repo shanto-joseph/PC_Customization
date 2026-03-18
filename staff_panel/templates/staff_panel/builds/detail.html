@@ -1,0 +1,215 @@
+{% extends 'staff_panel/base.html' %}
+
+{% block staff_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Custom Build #{{ build.id }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'staff_panel:custom_builds' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Builds
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Build Components -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Build Components</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>CPU</td>
+                                    <td>{{ build.cpu.name }}</td>
+                                    <td>₹{{ build.cpu.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Motherboard</td>
+                                    <td>{{ build.motherboard.name }}</td>
+                                    <td>₹{{ build.motherboard.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>RAM</td>
+                                    <td>{{ build.ram.name }}</td>
+                                    <td>₹{{ build.ram.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>GPU</td>
+                                    <td>{{ build.gpu.name }}</td>
+                                    <td>₹{{ build.gpu.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Storage</td>
+                                    <td>{{ build.storage.name }}</td>
+                                    <td>₹{{ build.storage.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Case</td>
+                                    <td>{{ build.case.name }}</td>
+                                    <td>₹{{ build.case.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Power Supply</td>
+                                    <td>{{ build.power_supply.name }}</td>
+                                    <td>₹{{ build.power_supply.price }}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Components Total:</strong></td>
+                                    <td><strong>₹{{ build.get_total_price }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Service Charge:</strong></td>
+                                    <td><strong>₹{{ build.service_charge }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Grand Total:</strong></td>
+                                    <td><strong>₹{{ build.get_total_price }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Build Status & Customer Info -->
+        <div class="col-md-4">
+            <!-- Build Status -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Build Status</h5>
+                </div>
+                <div class="card-body">
+                    <form id="buildStatusUpdateForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Current Status</label>
+                            <select name="status" id="buildStatusSelect" class="form-select">
+                                <option value="pending" {% if build.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="approved" {% if build.status == 'approved' %}selected{% endif %}>Approved</option>
+                                <option value="in_progress" {% if build.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                <option value="completed" {% if build.status == 'completed' %}selected{% endif %}>Completed</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Assembly Notes</label>
+                            <textarea name="assembly_notes" id="assemblyNotes" class="form-control" rows="3">{{ build.assembly_notes }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="updateBuildStatusBtn">
+                            <span class="btn-text">Update Status</span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ build.user.get_full_name }}</p>
+                    <p><strong>Email:</strong> {{ build.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ build.user.phone_number|default:"Not provided" }}</p>
+                    <p><strong>Build Name:</strong> {{ build.name }}</p>
+                    <p><strong>Created:</strong> {{ build.created_at|date:"M d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buildStatusForm = document.getElementById('buildStatusUpdateForm');
+    const updateBtn = document.getElementById('updateBuildStatusBtn');
+    const btnText = updateBtn.querySelector('.btn-text');
+    const spinner = updateBtn.querySelector('.spinner-border');
+    
+    buildStatusForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(buildStatusForm);
+        const status = formData.get('status');
+        const assemblyNotes = formData.get('assembly_notes');
+        
+        // Show loading state
+        updateBtn.disabled = true;
+        btnText.textContent = 'Updating...';
+        spinner.classList.remove('d-none');
+        
+        fetch('{% url "staff_panel:update_build_status" build.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                status: status,
+                assembly_notes: assemblyNotes
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Build status updated successfully!', 'success');
+                // Update the page to reflect the new status
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification(data.message || 'Failed to update build status', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while updating the status', 'error');
+        })
+        .finally(() => {
+            // Reset button state
+            updateBtn.disabled = false;
+            btnText.textContent = 'Update Status';
+            spinner.classList.add('d-none');
+        });
+    });
+});
+
+function showNotification(message, type = 'success') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

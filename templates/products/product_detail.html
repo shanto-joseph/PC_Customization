@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load product_filters %}
+{% block title %}{{ product.name }} | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Product Image -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Details -->
+        <div class="col-md-6">
+            <h1 class="mb-3">{{ product.name }}</h1>
+            
+            <!-- Rating Summary -->
+            <div class="mb-4">
+                {% with avg_rating=product.get_average_rating review_count=product.get_review_count %}
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rating-stars me-2">
+                        <div class="stars-outer">
+                            <div class="stars-inner" style="width: {{ avg_rating|multiply:20 }}%"></div>
+                        </div>
+                    </div>
+                    <span class="rating-number">{{ avg_rating|floatformat:1 }}</span>
+                    <span class="text-muted ms-2">(based on {{ review_count }} review{{ review_count|pluralize }})</span>
+                </div>
+                {% endwith %}
+            </div>
+
+            <div class="mb-3">
+                <span class="h3 text-primary">₹{{ product.price }}</span>
+                {% if product.stock > 0 %}
+                    <span class="badge bg-success ms-2">In Stock</span>
+                {% else %}
+                    <span class="badge bg-danger ms-2">Out of Stock</span>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <h5>Description</h5>
+                <p>{{ product.description }}</p>
+            </div>
+
+            <div class="mb-4">
+                <h5>Specifications</h5>
+                <ul class="list-unstyled">
+                    <li><strong>Brand:</strong> {{ product.brand.name }}</li>
+                    <li><strong>Category:</strong> {{ product.category.name }}</li>
+                    <li><strong>Stock:</strong> {{ product.stock }} units</li>
+                </ul>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary btn-lg" onclick="addToCart({{ product.id }})"
+                        {% if product.stock <= 0 %}disabled{% endif %}>
+                    <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                </button>
+                <button class="btn btn-outline-primary" onclick="addToWishlist({{ product.id }})">
+                    <i class="fas fa-heart me-2"></i>Add to Wishlist
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Customer Reviews</h4>
+                        {% if user.is_authenticated %}
+                            {% if has_purchased %}
+                                <button class="btn btn-primary" onclick="showAddReviewModal()">
+                                    <i class="fas fa-plus me-2"></i>Write a Review
+                                </button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if reviews %}
+                        {% for review in reviews %}
+                            <div class="review mb-4 {% if not forloop.last %}border-bottom pb-4{% endif %}">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="mb-1">{{ review.user.get_full_name }}</h5>
+                                        <div class="rating-stars mb-2">
+                                            <div class="stars-outer">
+                                                <div class="stars-inner" style="width: {{ review.rating|multiply:20 }}%"></div>
+                                            </div>
+                                            <span class="rating-text ms-2">({{ review.rating }}/5)</span>
+                                        </div>
+                                        <p class="mb-1">{{ review.comment }}</p>
+                                        <small class="text-muted">Reviewed on {{ review.created_at|date:"F d, Y" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-comments text-muted fa-3x mb-3"></i>
+                            <h5>No Reviews Yet</h5>
+                            <p class="text-muted mb-0">Be the first to review this product!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Review Modal -->
+<div class="modal fade" id="addReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Write a Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="reviewForm" onsubmit="submitReview(event)">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Rating</label>
+                        <div class="star-rating">
+                            <div class="stars">
+                                {% for i in "12345"|make_list %}
+                                <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" required>
+                                <label for="star{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Your Review</label>
+                        <textarea name="comment" class="form-control" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.rating-stars {
+    position: relative;
+    display: inline-block;
+}
+
+.stars-outer {
+    position: relative;
+    display: inline-block;
+}
+
+.stars-outer::before {
+    content: "★★★★★";
+    color: #ddd;
+    font-size: 20px;
+}
+
+.stars-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    width: 0;
+}
+
+.stars-inner::before {
+    content: "★★★★★";
+    color: #ffc107;
+    font-size: 20px;
+}
+
+/* Star Rating Input Styles */
+.star-rating .stars {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+.star-rating input[type="radio"] {
+    display: none;
+}
+
+.star-rating label {
+    color: #ddd;
+    cursor: pointer;
+    padding: 0 0.2em;
+    font-size: 2em;
+    transition: color 0.2s;
+}
+
+.star-rating input[type="radio"]:checked ~ label {
+    color: #ddd;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input[type="radio"]:checked + label {
+    color: #ffc107;
+}
+
+.rating-number {
+    font-size: 18px;
+    font-weight: 600;
+    color: #444;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showAddReviewModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addReviewModal'));
+    modal.show();
+}
+
+function addToCart(productId) {
+    {% if not user.is_authenticated %}
+        showNotification('Please log in to add items to your cart', 'error');
+        return;
+    {% endif %}
+
+    const formData = new FormData();
+    formData.append('product_id', productId);
+
+    fetch(`/cart/add/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('Product added to cart successfully');
+            updateCartBadge(data.cart_items_count);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error adding product to cart', 'error');
+    });
+}
+
+function addToWishlist(productId) {
+    fetch(`/wishlist/add/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('Product added to wishlist successfully');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error adding product to wishlist', 'error');
+    });
+}
+
+function submitReview(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    fetch(`/reviews/product/{{ product.id }}/add/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('Review submitted successfully');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addReviewModal'));
+            modal.hide();
+            location.reload(); // Reload to show the new review
+        } else {
+            showNotification(data.message || 'Error submitting review', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error submitting review', 'error');
+    });
+}
+
+// Initialize star rating functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const starLabels = document.querySelectorAll('.star-rating label');
+    starLabels.forEach(label => {
+        label.addEventListener('click', function() {
+            const rating = this.previousElementSibling.value;
+            const stars = this.closest('.stars').querySelectorAll('label');
+            stars.forEach(star => star.style.color = '#ddd');
+            for(let i = 0; i < rating; i++) {
+                stars[i].style.color = '#ffc107';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

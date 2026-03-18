@@ -1,0 +1,629 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}PC Customization Shop{% endblock %}</title>
+        <link rel="icon" type="image/svg+xml" href="{% static 'images/logo/pc.svg' %}">
+        
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Font Awesome -->
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="{% static 'css/style.css' %}" rel="stylesheet">
+        {% if user.is_admin %}
+            <link href="{% static 'css/admin.css' %}" rel="stylesheet">
+        {% elif user.is_staff_member %}
+            <link href="{% static 'css/staff.css' %}" rel="stylesheet">
+        {% endif %}
+        {% block extra_css %}{% endblock %}
+
+        <style>
+            /* Sticky Navigation */
+            .navbar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1030;
+                transition: all 0.3s ease;
+                {% if request.path == '/' %}
+                background-color: rgba(0, 0, 0, 0.1) !important;
+                backdrop-filter: blur(5px);
+                box-shadow: none;
+                {% else %}
+                background-color: white !important;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                {% endif %}
+            }
+
+            .navbar .navbar-brand,
+            .navbar .nav-link,
+            .navbar .navbar-toggler-icon {
+                {% if request.path == '/' %}
+                color: rgba(255, 255, 255, 0.836) !important;
+                {% else %}
+                color: var(--gray-700) !important;
+                {% endif %}
+            }
+
+            .navbar .navbar-toggler {
+                {% if request.path == '/' %}
+                border-color: rgba(255, 255, 255, 0.5);
+                {% else %}
+                border-color: rgba(0, 0, 0, 0.5);
+                {% endif %}
+            }
+
+            .navbar .navbar-toggler-icon {
+                {% if request.path == '/' %}
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+                {% else %}
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%280, 0, 0, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+                {% endif %}
+            }
+
+            .navbar.scrolled {
+                background-color: rgba(255, 255, 255, 0.95) !important;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+
+            .navbar.scrolled .navbar-brand,
+            .navbar.scrolled .nav-link {
+                color: var(--gray-700) !important;
+            }
+
+            .navbar.scrolled .nav-link:hover {
+                color: var(--primary-color) !important;
+            }
+
+            /* Fix navbar hover visibility on home page */
+            .navbar .nav-link:hover {
+                {% if request.path == '/' %}
+                color: white !important;
+                background-color: rgba(255, 255, 255, 0.1);
+                {% else %}
+                color: var(--primary-color) !important;
+                background-color: rgba(14, 165, 233, 0.1);
+                {% endif %}
+            }
+
+            .navbar .navbar-brand:hover {
+                {% if request.path == '/' %}
+                color: white !important;
+                {% else %}
+                color: var(--primary-color) !important;
+                {% endif %}
+            }
+
+            /* Adjust main content for fixed navbar */
+            main {
+                padding-top: 76px;
+            }
+
+            /* Sticky Sidebar */
+            .sidebar {
+                position: sticky;
+                top: 76px;
+                height: calc(100vh - 76px);
+                overflow-y: auto;
+            }
+
+            /* User Avatar Styles */
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                object-fit: cover;
+            }
+            .user-avatar.placeholder {
+                background-color: var(--primary-color);
+                color: white;
+                font-weight: 500;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* Profile Navigation Styles */
+            .nav-pills .nav-link {
+                color: #495057;
+                padding: 1rem;
+                border-radius: 0;
+                border-bottom: 1px solid #dee2e6;
+            }
+
+            .nav-pills .nav-link:hover {
+                background-color: #f8f9fa;
+            }
+
+            .nav-pills .nav-link.active {
+                color: #fff !important;
+                background-color: #0d6efd;
+            }
+
+            /* Order Details Styles */
+            .order-status {
+                padding: 0.5rem 1rem;
+                border-radius: 0.25rem;
+                font-weight: 500;
+            }
+
+            .order-status.pending { background-color: #fff3cd; color: #856404; }
+            .order-status.processing { background-color: #cce5ff; color: #004085; }
+            .order-status.shipped { background-color: #d4edda; color: #155724; }
+            .order-status.delivered { background-color: #d1e7dd; color: #0f5132; }
+            .order-status.cancelled { background-color: #f8d7da; color: #721c24; }
+        </style>
+    </head>
+    <body>
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand" href="{% url 'products:home' %}">
+                    <i class="fas fa-light fa-microchip"></i><span style="color: #0ea5e9;">PC</span> Customs
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'product_list' %}active{% endif %}" 
+                               href="{% url 'products:product_list' %}">
+                               <i class="fas fa-box me-1"></i>Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'custom_pc' %}active{% endif %}" 
+                               href="{% url 'customization:custom_pc' %}">
+                               <i class="fas fa-tools me-1"></i>Build PC
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
+                               href="{% url 'support:contact' %}">
+                               <i class="fas fa-headset me-1"></i>Support
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    {% if user.is_authenticated %}
+                        <ul class="navbar-nav">
+                            <!-- Wishlist -->
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'wishlist' %}active{% endif %}" 
+                                   href="{% url 'wishlist:wishlist' %}">
+                                    <i class="fas fa-heart"></i>
+                                </a>
+                            </li>
+                            
+                            <!-- Cart -->
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'cart' %}active{% endif %}" 
+                                   href="{% url 'cart:cart' %}">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    {% if cart_items_count > 0 %}
+                                        <span class="badge bg-danger" id="cart-badge">{{ cart_items_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            
+                            <!-- User Menu -->
+                            <li class="nav-item dropdown ms-2">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" 
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    {% if user.profile_image %}
+                                        <img src="{{ user.profile_image.url }}" alt="{{ user.username }}" class="user-avatar">
+                                    {% else %}
+                                        <div class="user-avatar placeholder">
+                                            {{ user.username|make_list|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <span class="ms-2">{{ user.username }}</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    {% if user.is_admin %}
+                                        <li><a class="dropdown-item" href="{% url 'admin_panel:dashboard' %}">
+                                            <i class="fas fa-gauge-high me-2"></i>Admin Panel
+                                        </a></li>
+                                    {% elif user.is_staff_member %}
+                                        <li><a class="dropdown-item" href="{% url 'staff_panel:dashboard' %}">
+                                            <i class="fas fa-gauge-high me-2"></i>Staff Panel
+                                        </a></li>
+                                    {% endif %}
+                                    <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                        <i class="fas fa-user me-2"></i>Profile
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">
+                                        <i class="fas fa-box me-2"></i>Orders
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'customization:my_builds' %}">
+                                        <i class="fas fa-desktop me-2"></i>My PC Builds
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'support:ticket_list' %}">
+                                        <i class="fas fa-ticket me-2"></i>Support Tickets
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    {% else %}
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:login' %}">
+                                    <i class="fas fa-sign-in-alt me-1"></i>Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:register' %}">
+                                    <i class="fas fa-user-plus me-1"></i>Register
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer mt-auto py-4 bg-dark text-white">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h5 class="text-white">About Us</h5>
+                        <p>PC Customization Shop is your one-stop destination for custom PC builds and high-quality computer components.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="text-white">Quick Links</h5>
+                        <ul class="list-unstyled">
+                            <li><a href="{% url 'products:home' %}" class="text-white">Home</a></li>
+                            <li><a href="{% url 'products:product_list' %}" class="text-white">Products</a></li>
+                            <li><a href="{% url 'customization:custom_pc' %}" class="text-white">Build PC</a></li>
+                            <li><a href="{% url 'support:contact' %}" class="text-white">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="text-white">Contact Info</h5>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-map-marker-alt me-2"></i>123 Tech Street, Digital City</li>
+                            <li><i class="fas fa-phone me-2"></i>+91 9876543210</li>
+                            <li><i class="fas fa-envelope me-2"></i>info@pccustomshop.com</li>
+                        </ul>
+                        <div class="social-links mt-3">
+                            <a href="#" class="text-white me-3"><i class="fab fa-facebook"></i></a>
+                            <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="text-white me-3"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-4">
+                <div class="text-center">
+                    <p class="mb-0">&copy; {% now "Y" %} PC Customization Shop. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Custom JS -->
+        <script src="{% static 'js/main.js' %}"></script>
+        {% block extra_js %}{% endblock %}
+
+        <!-- Notification System -->
+        <div class="notification-container"></div>
+
+        <!-- Vex AI Chatbot -->
+        {% if user.is_authenticated %}
+        <div id="vex-ai-widget">
+            <button id="vex-ai-toggle" class="vex-ai-button" title="Chat with Vex AI">
+                <img src="{% static 'images/logo/vex.png' %}" alt="Vex AI" class="vex-ai-logo">
+            </button>
+            
+            <div id="vex-ai-chat" class="vex-ai-chat-container" style="display: none;">
+                <div class="vex-ai-header">
+                    <div class="d-flex align-items-center">
+                        <img src="{% static 'images/logo/vex.png' %}" alt="Vex AI" class="vex-ai-header-logo me-2">
+                        <div>
+                            <h6 class="mb-0">Vex AI</h6>
+                            <small class="text-muted" style="color: #ffffff;">PC Customization Assistant</small>
+                            
+
+                        </div>
+                    </div>
+                    <button id="vex-ai-close" class="btn-close btn-close-white"></button>
+                </div>
+                
+                <div id="vex-ai-messages" class="vex-ai-messages">
+                    <div class="vex-ai-message vex-ai-bot">
+                        <div class="vex-ai-avatar">
+                            <img src="{% static 'images/logo/vex.png' %}" alt="Vex AI">
+                        </div>
+                        <div class="vex-ai-bubble">
+                            Hello! I'm Vex AI, your PC customization assistant.
+                            
+                            How can I assist you today?
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="vex-ai-input-container">
+                    <input type="text" id="vex-ai-input" class="form-control" placeholder="Ask me anything about PCs..." />
+                    <button id="vex-ai-send" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Hidden data for JavaScript -->
+            <div id="user-data" style="display: none;" 
+                 data-has-image="{{ user.profile_image|yesno:'true,false' }}"
+                 data-image-url="{% if user.profile_image %}{{ user.profile_image.url }}{% endif %}"
+                 data-username="{{ user.username }}">
+            </div>
+        </div>
+        {% endif %}
+
+        <script>
+        // Show notification function
+        function showNotification(message, type = 'success') {
+            const container = document.querySelector('.notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type} animate-fade-in`;
+            
+            let icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            else if (type === 'warning') icon = 'exclamation-triangle';
+            else if (type === 'info') icon = 'info-circle';
+            
+            notification.innerHTML = `
+                <i class="fas fa-${icon} fa-lg"></i>
+                <span style="flex: 1;">${message}</span>
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+            `;
+            container.appendChild(notification);
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        // Handle AJAX errors
+        function handleAjaxError(error) {
+            console.error('Error:', error);
+            showNotification('An error occurred. Please try again.', 'error');
+        }
+
+        // Update cart badge
+        function updateCartBadge(count) {
+            const badge = document.getElementById('cart-badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        // Update notifications badge
+        function updateNotificationsBadge(count) {
+            const badge = document.getElementById('notifications-badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        // Check for new notifications periodically
+        {% if user.is_authenticated %}
+        setInterval(() => {
+            fetch('{% url "notifications:unread_count" %}')
+                .then(response => response.json())
+                .then(data => updateNotificationsBadge(data.count))
+                .catch(handleAjaxError);
+        }, 60000); // Check every minute
+        {% endif %}
+
+        // Add scroll event listener for navbar
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function(tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Preserve active tab after page reload
+        document.addEventListener('DOMContentLoaded', function() {
+            const hash = window.location.hash;
+            if (hash) {
+                const tab = document.querySelector(`[href="${hash}"]`);
+                if (tab) {
+                    const tabInstance = new bootstrap.Tab(tab);
+                    tabInstance.show();
+                }
+            }
+        });
+
+        // Vex AI Chatbot functionality
+        const vexAiToggle = document.getElementById('vex-ai-toggle');
+        const vexAiClose = document.getElementById('vex-ai-close');
+        const vexAiChat = document.getElementById('vex-ai-chat');
+        const vexAiInput = document.getElementById('vex-ai-input');
+        const vexAiSend = document.getElementById('vex-ai-send');
+        const vexAiMessages = document.getElementById('vex-ai-messages');
+        
+        let chatHistory = [];
+
+        // Toggle chat window
+        vexAiToggle.addEventListener('click', function() {
+            if (vexAiChat.style.display === 'none') {
+                vexAiChat.style.display = 'flex';
+                vexAiInput.focus();
+            } else {
+                vexAiChat.style.display = 'none';
+            }
+        });
+
+        vexAiClose.addEventListener('click', function() {
+            vexAiChat.style.display = 'none';
+        });
+
+        // Send message
+        function sendVexMessage() {
+            const message = vexAiInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addVexMessage(message, 'user');
+            vexAiInput.value = '';
+
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'vex-ai-message vex-ai-bot';
+            typingIndicator.id = 'vex-typing';
+            typingIndicator.innerHTML = `
+                <div class="vex-ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="vex-ai-bubble">
+                    <div class="vex-ai-typing">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            vexAiMessages.appendChild(typingIndicator);
+            vexAiMessages.scrollTop = vexAiMessages.scrollHeight;
+
+            // Send to backend
+            fetch('/chatbot/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    history: chatHistory
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remove typing indicator
+                const typing = document.getElementById('vex-typing');
+                if (typing) typing.remove();
+
+                if (data.status === 'success' && data.response) {
+                    // Add bot response
+                    addVexMessage(data.response, 'bot');
+                    
+                    // Update chat history (keep last 10 messages for optimization)
+                    chatHistory.push({ role: 'user', content: message });
+                    chatHistory.push({ role: 'model', content: data.response });
+                    
+                    // Limit history size
+                    if (chatHistory.length > 20) {
+                        chatHistory = chatHistory.slice(-20);
+                    }
+                } else {
+                    const errorMsg = data.response || 'Sorry, I encountered an error. Please try again.';
+                    addVexMessage(errorMsg, 'bot');
+                    console.error('API Error:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch Error:', error);
+                const typing = document.getElementById('vex-typing');
+                if (typing) typing.remove();
+                addVexMessage('Sorry, I\'m having trouble connecting. Please check your internet connection and try again.', 'bot');
+            });
+        }
+
+        function addVexMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `vex-ai-message vex-ai-${sender}`;
+            
+            let avatar;
+            if (sender === 'bot') {
+                avatar = '<div class="vex-ai-avatar"><img src="{% static "images/logo/vex.png" %}" alt="Vex AI"></div>';
+            } else {
+                // Get user data
+                const userData = document.getElementById('user-data');
+                const hasImage = userData.dataset.hasImage === 'true';
+                const imageUrl = userData.dataset.imageUrl;
+                const username = userData.dataset.username;
+                
+                if (hasImage && imageUrl) {
+                    avatar = `<div class="vex-ai-avatar"><img src="${imageUrl}" alt="${username}"></div>`;
+                } else {
+                    // Use first letter of username as placeholder
+                    const initial = username.charAt(0).toUpperCase();
+                    avatar = `<div class="vex-ai-avatar"><span>${initial}</span></div>`;
+                }
+            }
+            
+            // Convert markdown-style formatting to HTML
+            let formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+            
+            messageDiv.innerHTML = `
+                ${avatar}
+                <div class="vex-ai-bubble">${formattedText}</div>
+            `;
+            
+            vexAiMessages.appendChild(messageDiv);
+            vexAiMessages.scrollTop = vexAiMessages.scrollHeight;
+        }
+
+        vexAiSend.addEventListener('click', sendVexMessage);
+        
+        vexAiInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendVexMessage();
+            }
+        });
+        </script>
+    </body>
+</html>

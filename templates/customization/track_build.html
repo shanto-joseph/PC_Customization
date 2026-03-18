@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}Track Custom PC Build | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Track Build #{{ build.id }}</h4>
+                        <span class="badge bg-{% if build.status == 'pending' %}warning{% elif build.status == 'approved' %}success{% elif build.status == 'rejected' %}danger{% else %}info{% endif %}">
+                            {{ build.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Build Timeline -->
+                    <div class="timeline">
+                        <div class="timeline-item {% if build.status != 'rejected' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Build Submitted</h6>
+                                <p class="text-muted">{{ build.created_at|date:"M d, Y H:i" }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if build.status == 'approved' or build.status == 'in_progress' or build.status == 'ready' or build.status == 'paid' or build.status == 'assembling' or build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Build Approved</h6>
+                                <p class="text-muted">Your build has been approved</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'paid' or build.status == 'assembling' or build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Payment Received</h6>
+                                <p class="text-muted">Payment has been processed successfully</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'assembling' or build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Assembly In Progress</h6>
+                                <p class="text-muted">Your PC is being built</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Testing</h6>
+                                <p class="text-muted">Quality testing in progress</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Shipped</h6>
+                                <p class="text-muted">Your PC has been shipped</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Delivered</h6>
+                                <p class="text-muted">Your PC has been delivered</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'rejected' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Build Rejected</h6>
+                                <p class="text-muted">{{ build.rejection_reason }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Shipping Information -->
+                    {% if build.shipping_address %}
+                    <div class="mt-4">
+                        <h5>Shipping Address</h5>
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="mb-1">{{ build.shipping_address.address_line1 }}</p>
+                                {% if build.shipping_address.address_line2 %}
+                                    <p class="mb-1">{{ build.shipping_address.address_line2 }}</p>
+                                {% endif %}
+                                <p class="mb-1">{{ build.shipping_address.city }}, {{ build.shipping_address.state }}</p>
+                                <p class="mb-1">{{ build.shipping_address.postal_code }}</p>
+                                <p class="mb-0">{{ build.shipping_address.country }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Support Button -->
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'support:create_ticket' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-headset me-2"></i>Need Help?
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    width: 2px;
+    background: #e9ecef;
+    top: 0;
+    bottom: 0;
+    left: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 50px;
+    padding-bottom: 30px;
+}
+
+.timeline-point {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 13px;
+    border: 2px solid #e9ecef;
+    background: #fff;
+    border-radius: 50%;
+}
+
+.timeline-item.active .timeline-point {
+    border-color: #28a745;
+    background: #28a745;
+}
+
+.timeline-content {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.timeline-item.active .timeline-content {
+    background: #e8f5e9;
+}
+</style>
+{% endblock %}

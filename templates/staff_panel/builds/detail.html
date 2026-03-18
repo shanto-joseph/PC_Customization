@@ -1,0 +1,313 @@
+{% extends 'staff_panel/base.html' %}
+
+{% block staff_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Custom Build #{{ build.id }}</h1>
+        <a href="{% url 'staff_panel:builds' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Builds
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Build Components -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Build Components</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>CPU</td>
+                                    <td>{{ build.cpu.name }}</td>
+                                    <td>₹{{ build.cpu.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Motherboard</td>
+                                    <td>{{ build.motherboard.name }}</td>
+                                    <td>₹{{ build.motherboard.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>RAM</td>
+                                    <td>{{ build.ram.name }}</td>
+                                    <td>₹{{ build.ram.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>GPU</td>
+                                    <td>{{ build.gpu.name }}</td>
+                                    <td>₹{{ build.gpu.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Storage</td>
+                                    <td>{{ build.storage.name }}</td>
+                                    <td>₹{{ build.storage.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Case</td>
+                                    <td>{{ build.case.name }}</td>
+                                    <td>₹{{ build.case.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Power Supply</td>
+                                    <td>{{ build.power_supply.name }}</td>
+                                    <td>₹{{ build.power_supply.price }}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Components Total:</strong></td>
+                                    <td><strong>₹{{ build.get_components_total }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Service Charge:</strong></td>
+                                    <td><strong>₹{{ build.service_charge }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Grand Total:</strong></td>
+                                    <td><strong>₹{{ build.get_total_price }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Build Status & Customer Info -->
+        <div class="col-md-4">
+            <!-- Build Status Alert -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Build Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-{% if build.status == 'pending' %}warning{% elif build.status == 'approved' %}success{% elif build.status == 'rejected' %}danger{% else %}info{% endif %} mb-0">
+                        <strong>Current Status:</strong> {{ build.get_status_display }}
+                        {% if build.status == 'rejected' and build.rejection_reason %}
+                            <hr>
+                            <strong>Rejection Reason:</strong>
+                            <p class="mb-0">{{ build.rejection_reason }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assignment Response -->
+            {% if build.assigned_staff == request.user and build.status == 'pending' %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Assignment Response</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="assignmentResponseForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="status" id="responseStatus">
+                        <div class="mb-3">
+                            <label class="form-label">Your Response</label>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-success" onclick="handleBuildResponse('approved')">
+                                    <i class="fas fa-check me-2"></i>Accept Build Request
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="handleBuildResponse('rejected')">
+                                    <i class="fas fa-times me-2"></i>Reject Build Request
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Build Status Management -->
+            {% if build.status != 'pending' or build.assigned_staff == request.user %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Build Status Management</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'staff_panel:update_build_status' build.id %}" id="statusUpdateForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_status">
+                        <div class="mb-3">
+                            <label class="form-label">Current Status</label>
+                            <select name="status" class="form-select" {% if build.status == 'pending' %}disabled{% endif %} id="statusSelect">
+                                <option value="pending" {% if build.status == 'pending' %}selected{% endif %}>Pending Review</option>
+                                <option value="approved" {% if build.status == 'approved' %}selected{% endif %}>Approved (Awaiting Payment)</option>
+                                <option value="assembling" {% if build.status == 'assembling' %}selected{% endif %}>Assembling</option>
+                                <option value="testing" {% if build.status == 'testing' %}selected{% endif %}>Testing</option>
+                                <option value="ready" {% if build.status == 'ready' %}selected{% endif %}>Ready for Pickup/Shipping</option>
+                                <option value="delivered" {% if build.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                <option value="rejected" {% if build.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Assembly Notes</label>
+                            <textarea name="assembly_notes" class="form-control" rows="3" placeholder="Add any notes about the build status, assembly details, or rejection reason">{{ build.assembly_notes }}</textarea>
+                        </div>
+
+                        <input type="hidden" name="rejection_reason" id="rejectionReasonInput">
+
+                        <button type="submit" class="btn btn-primary w-100" {% if build.status == 'pending' %}disabled{% endif %}>
+                            Update Status
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Customer Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ build.user.get_full_name }}</p>
+                    <p><strong>Email:</strong> {{ build.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ build.user.phone_number|default:"Not provided" }}</p>
+                    <p><strong>Build Name:</strong> {{ build.name }}</p>
+                    <p><strong>Created:</strong> {{ build.created_at|date:"M d, Y" }}</p>
+                </div>
+            </div>
+
+            <!-- Payment Status -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Payment Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert {% if build.is_paid %}alert-success{% else %}alert-warning{% endif %}">
+                        {% if build.is_paid %}
+                            <i class="fas fa-check-circle me-2"></i> Payment Received
+                            <p class="small mb-0">Paid on {{ build.payment_date|date:"M d, Y" }}</p>
+                        {% else %}
+                            <i class="fas fa-clock me-2"></i> 
+                            {% if build.status == 'approved' %}
+                                Awaiting Payment
+                            {% else %}
+                                Payment will be enabled after approval
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Reason Modal -->
+<div class="modal fade" id="rejectionReasonModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reject Build Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Please provide a reason for rejection</label>
+                    <textarea class="form-control" id="rejectionReasonText" rows="4" required></textarea>
+                    <div class="invalid-feedback">Please provide a reason for rejection.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmRejection()">
+                    Confirm Rejection
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('statusSelect');
+    const statusForm = document.getElementById('statusUpdateForm');
+    
+    if (statusSelect) {
+        statusSelect.addEventListener('change', function() {
+            if (this.value === 'rejected') {
+                // Show rejection reason modal
+                const modal = new bootstrap.Modal(document.getElementById('rejectionReasonModal'));
+                modal.show();
+                
+                // Reset selection if modal is dismissed
+                const modalElement = document.getElementById('rejectionReasonModal');
+                modalElement.addEventListener('hidden.bs.modal', function() {
+                    statusSelect.value = statusSelect.dataset.previousValue || 'pending';
+                });
+            }
+            
+            // Store the current value
+            this.dataset.previousValue = this.value;
+        });
+    }
+});
+
+function handleBuildResponse(status) {
+    if (status === 'rejected') {
+        // Show rejection reason modal
+        const modal = new bootstrap.Modal(document.getElementById('rejectionReasonModal'));
+        modal.show();
+    } else if (status === 'approved') {
+        if (confirm('Are you sure you want to approve this build request?')) {
+            document.getElementById('responseStatus').value = status;
+            document.getElementById('assignmentResponseForm').submit();
+        }
+    }
+}
+
+function confirmRejection() {
+    const reason = document.getElementById('rejectionReasonText').value.trim();
+    
+    if (!reason) {
+        document.getElementById('rejectionReasonText').classList.add('is-invalid');
+        return;
+    }
+
+    // For status update form
+    const statusForm = document.getElementById('statusUpdateForm');
+    if (statusForm) {
+        const statusSelect = document.getElementById('statusSelect');
+        statusSelect.value = 'rejected';
+        document.getElementById('rejectionReasonInput').value = reason;
+        statusForm.submit();
+    }
+    
+    // For assignment response form
+    const assignmentForm = document.getElementById('assignmentResponseForm');
+    if (assignmentForm) {
+        document.getElementById('responseStatus').value = 'rejected';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'rejection_reason';
+        input.value = reason;
+        assignmentForm.appendChild(input);
+        assignmentForm.submit();
+    }
+}
+</script>
+{% endblock %}
+{% endblock %}

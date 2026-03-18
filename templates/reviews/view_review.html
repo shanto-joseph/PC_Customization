@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Your Review - {{ product.name }} | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Your Review for {{ product.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h5>Rating</h5>
+                        <div class="text-warning">
+                            {% for i in "12345"|make_list %}
+                                <i class="fas fa-star{% if forloop.counter > review.rating %}-o{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <h5>Your Comment</h5>
+                        <p>{{ review.comment }}</p>
+                    </div>
+                    <div class="text-muted mb-4">
+                        Posted on {{ review.created_at|date:"M d, Y" }}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

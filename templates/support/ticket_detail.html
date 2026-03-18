@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Ticket Details | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Ticket #{{ ticket.id }}</h4>
+                        <span class="badge bg-{% if ticket.status == 'open' %}warning{% elif ticket.status == 'in_progress' %}info{% elif ticket.status == 'resolved' %}success{% else %}secondary{% endif %}">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>{{ ticket.subject }}</h5>
+                        <small class="text-muted">Created on {{ ticket.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                    
+                    <div class="ticket-message p-3 bg-light rounded mb-4">
+                        {{ ticket.message }}
+                    </div>
+
+                    {% if ticket.order %}
+                        <div class="mb-4">
+                            <h6>Related Order</h6>
+                            <a href="{% url 'orders:order_detail' ticket.order.id %}" class="btn btn-outline-primary btn-sm">
+                                View Order #{{ ticket.order.id }}
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Responses -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Responses</h5>
+                </div>
+                <div class="card-body">
+                    {% if ticket.responses.all %}
+                        {% for response in ticket.responses.all %}
+                            <div class="response mb-4 {% if response.user.is_staff_member %}bg-light{% endif %} p-3 rounded">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <strong>{{ response.user.get_full_name }}</strong>
+                                    <small class="text-muted">{{ response.created_at|date:"M d, Y H:i" }}</small>
+                                </div>
+                                <p class="mb-0">{{ response.message }}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center mb-4">No responses yet</p>
+                    {% endif %}
+
+                    {% if ticket.status != 'closed' %}
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="response" class="form-label">Add Response</label>
+                                <textarea class="form-control" id="response" name="response" rows="3" required></textarea>
+                                <div class="invalid-feedback">Please provide a response.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Response</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

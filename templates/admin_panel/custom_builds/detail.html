@@ -1,0 +1,184 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Custom Build #{{ build.id }}</h1>
+        <a href="{% url 'admin_panel:custom_builds' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Builds
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Build Components -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Build Components</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>CPU</td>
+                                    <td>{{ build.cpu.name }}</td>
+                                    <td>₹{{ build.cpu.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Motherboard</td>
+                                    <td>{{ build.motherboard.name }}</td>
+                                    <td>₹{{ build.motherboard.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>RAM</td>
+                                    <td>{{ build.ram.name }}</td>
+                                    <td>₹{{ build.ram.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>GPU</td>
+                                    <td>{{ build.gpu.name }}</td>
+                                    <td>₹{{ build.gpu.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Storage</td>
+                                    <td>{{ build.storage.name }}</td>
+                                    <td>₹{{ build.storage.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Case</td>
+                                    <td>{{ build.case.name }}</td>
+                                    <td>₹{{ build.case.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Power Supply</td>
+                                    <td>{{ build.power_supply.name }}</td>
+                                    <td>₹{{ build.power_supply.price }}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Components Total:</strong></td>
+                                    <td><strong>₹{{ build.get_components_total }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Service Charge:</strong></td>
+                                    <td><strong>₹{{ build.service_charge }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Grand Total:</strong></td>
+                                    <td><strong>₹{{ build.get_total_price }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Build Status & Customer Info -->
+        <div class="col-md-4">
+            <!-- Staff Assignment -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Staff Assignment</h5>
+                </div>
+                <div class="card-body">
+                    {% if build.assigned_staff %}
+                        <div class="alert alert-info">
+                            <strong>Currently Assigned To:</strong><br>
+                            {{ build.assigned_staff.get_full_name }}<br>
+                            <small class="text-muted">Assigned on {{ build.updated_at|date:"M d, Y" }}</small>
+                        </div>
+                        {% if build.status == 'pending' %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="assign_staff">
+                                <div class="mb-3">
+                                    <label class="form-label">Reassign To</label>
+                                    <select name="staff_id" class="form-select" required>
+                                        <option value="">Choose staff member...</option>
+                                        {% for staff in staff_members %}
+                                            <option value="{{ staff.id }}">{{ staff.get_full_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100">Reassign Staff</button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="assign_staff">
+                            <div class="mb-3">
+                                <label class="form-label">Select Staff Member</label>
+                                <select name="staff_id" class="form-select" required>
+                                    <option value="">Choose staff member...</option>
+                                    {% for staff in staff_members %}
+                                        <option value="{{ staff.id }}">{{ staff.get_full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Assign Staff</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Build Status -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Build Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-{% if build.status == 'pending' %}warning{% elif build.status == 'approved' %}success{% elif build.status == 'rejected' %}danger{% else %}info{% endif %}">
+                        Current Status: <strong>{{ build.get_status_display }}</strong>
+                    </div>
+                    {% if build.assembly_notes %}
+                        <div class="mb-3">
+                            <h6>Assembly Notes:</h6>
+                            <p class="mb-0">{{ build.assembly_notes }}</p>
+                        </div>
+                    {% endif %}
+                    {% if build.status == 'rejected' and build.rejection_reason %}
+                        <div class="mb-3">
+                            <h6>Rejection Reason:</h6>
+                            <p class="mb-0">{{ build.rejection_reason }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ build.user.get_full_name }}</p>
+                    <p><strong>Email:</strong> {{ build.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ build.user.phone_number|default:"Not provided" }}</p>
+                    <p><strong>Build Name:</strong> {{ build.name }}</p>
+                    <p><strong>Created:</strong> {{ build.created_at|date:"M d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

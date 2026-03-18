@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block title %}Checkout | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Order Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Order Summary</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart.cartitem_set.all %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.product.image %}
+                                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" 
+                                                     class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-light me-2" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                                    <i class="fas fa-image text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                            {{ item.product.name }}
+                                        </div>
+                                    </td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>₹{{ item.product.price }}</td>
+                                    <td>₹{{ item.get_total }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                    <td><strong>₹{{ cart.get_cart_total }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Address -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Shipping Address</h4>
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                            <i class="fas fa-plus"></i> Add New
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if user.shippingaddress_set.exists %}
+                        <form id="checkoutForm">
+                            {% csrf_token %}
+                            {% for address in user.shippingaddress_set.all %}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="shipping_address_id" 
+                                           id="address_{{ address.id }}" value="{{ address.id }}"
+                                           {% if address.is_default %}checked{% endif %} required>
+                                    <label class="form-check-label" for="address_{{ address.id }}">
+                                        <strong>{{ address.address_line1 }}</strong><br>
+                                        {% if address.address_line2 %}{{ address.address_line2 }}<br>{% endif %}
+                                        {{ address.city }}, {{ address.state }}<br>
+                                        {{ address.postal_code }}<br>
+                                        {{ address.country }}
+                                        {% if address.is_default %}<span class="badge bg-primary ms-2">Default</span>{% endif %}
+                                    </label>
+                                </div>
+                            {% endfor %}
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="button" id="proceedToPayment" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-lock me-2"></i>Proceed to Payment
+                                </button>
+                                <a href="{% url 'cart:cart' %}" class="btn btn-outline-secondary">Back to Cart</a>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-3">Please add a shipping address to continue.</p>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                                Add Shipping Address
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Address Modal -->
+<div class="modal fade" id="addAddressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Address</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'accounts:add_address' %}" id="addAddressForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Address Line 1</label>
+                        <input type="text" name="address_line1" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address Line 2 (Optional)</label>
+                        <input type="text" name="address_line2" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">City</label>
+                        <input type="text" name="city" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">State</label>
+                        <input type="text" name="state" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Postal Code</label>
+                        <input type="text" name="postal_code" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Country</label>
+                        <input type="text" name="country" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="is_default" class="form-check-input" id="is_default">
+                            <label class="form-check-label" for="is_default">Set as default address</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Address</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Proceed to payment without creating order
+document.getElementById('proceedToPayment').addEventListener('click', function() {
+    const selectedAddress = document.querySelector('input[name="shipping_address_id"]:checked');
+    
+    if (!selectedAddress) {
+        showNotification('Please select a shipping address', 'error');
+        return;
+    }
+    
+    // Store address in session and redirect to payment
+    fetch('{% url "cart:prepare_checkout" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            shipping_address_id: selectedAddress.value
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Redirect to payment page
+            window.location.href = data.payment_url;
+        } else {
+            showNotification(data.error || 'Error preparing checkout', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error preparing checkout', 'error');
+    });
+});
+
+// Handle new address form submission
+document.getElementById('addAddressForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            showNotification('Error adding address', 'error');
+        }
+    });
+});
+</script>
+{% endblock %}

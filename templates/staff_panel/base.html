@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-12 col-lg-2">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'staff_panel:dashboard' %}" 
+                           class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                        <a href="{% url 'staff_panel:products' %}" 
+                           class="list-group-item list-group-item-action {% if 'products' in request.path %}active{% endif %}">
+                            <i class="fas fa-box me-2"></i> Products
+                        </a>
+                        <a href="{% url 'staff_panel:orders' %}" 
+                           class="list-group-item list-group-item-action {% if 'orders' in request.path %}active{% endif %}">
+                            <i class="fas fa-shopping-cart me-2"></i> Orders
+                        </a>
+                        <a href="{% url 'staff_panel:builds' %}" 
+                           class="list-group-item list-group-item-action {% if 'builds' in request.path %}active{% endif %}">
+                            <i class="fas fa-desktop me-2"></i> Custom Builds
+                        </a>
+                        <a href="{% url 'staff_panel:support_tickets' %}" 
+                           class="list-group-item list-group-item-action {% if 'support' in request.path %}active{% endif %}">
+                            <i class="fas fa-headset me-2"></i> Support Tickets
+                        </a>
+                        <a href="{% url 'staff_panel:profile' %}" 
+                           class="list-group-item list-group-item-action {% if 'profile' in request.path %}active{% endif %}">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <div class="col-12 col-lg-10">
+            {% block staff_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/staff.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/staff.js' %}"></script>
+{% endblock %}

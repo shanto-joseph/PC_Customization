@@ -1,0 +1,87 @@
+{% extends 'staff_panel/base.html' %}
+
+{% block staff_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Notifications</h1>
+        {% if notifications %}
+        <button class="btn btn-outline-primary" onclick="markAllAsRead()">
+            Mark All as Read
+        </button>
+        {% endif %}
+    </div>
+
+    {% if notifications %}
+    <div class="card">
+        <div class="card-body">
+            <div class="list-group">
+                {% for notification in notifications %}
+                <div class="list-group-item {% if not notification.is_read %}list-group-item-primary{% endif %}"
+                     id="notification-{{ notification.id }}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ notification.title }}</h5>
+                        <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                    </div>
+                    <p class="mb-1">{{ notification.message }}</p>
+                    {% if notification.link %}
+                    <a href="{{ notification.link }}" class="btn btn-sm btn-primary mt-2">View Details</a>
+                    {% endif %}
+                    {% if not notification.is_read %}
+                    <button class="btn btn-sm btn-outline-primary mt-2" 
+                            onclick="markAsRead({{ notification.id }})">
+                        Mark as Read
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+        <h3>No Notifications</h3>
+        <p class="text-muted">You don't have any notifications at the moment.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+function markAsRead(notificationId) {
+    fetch(`/staff/notifications/mark-read/${notificationId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const notification = document.getElementById(`notification-${notificationId}`);
+            notification.classList.remove('list-group-item-primary');
+            const markReadBtn = notification.querySelector('button');
+            if (markReadBtn) {
+                markReadBtn.remove();
+            }
+        }
+    });
+}
+
+function markAllAsRead() {
+    fetch('/staff/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

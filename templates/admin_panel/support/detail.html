@@ -1,0 +1,121 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Support Ticket #{{ ticket.id }}</h1>
+        <a href="{% url 'admin_panel:support' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Tickets
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Ticket Messages -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ ticket.subject }}</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Original Message -->
+                    <div class="ticket-message mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ ticket.user.get_full_name }}</strong>
+                                <span class="text-muted ms-2">{{ ticket.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="message-content bg-light p-3 rounded">
+                            {{ ticket.message }}
+                        </div>
+                    </div>
+
+                    <!-- Responses -->
+                    {% for response in ticket.responses.all %}
+                    <div class="ticket-message mb-4 {% if response.user.is_staff_member %}ms-4{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ response.user.get_full_name }}</strong>
+                                <span class="text-muted ms-2">{{ response.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="message-content {% if response.user.is_staff_member %}bg-primary text-white{% else %}bg-light{% endif %} p-3 rounded">
+                            {{ response.message }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Info & Status -->
+        <div class="col-md-4">
+            <!-- Staff Assignment -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Staff Assignment</h5>
+                </div>
+                <div class="card-body">
+                    {% if ticket.assigned_staff %}
+                        <div class="alert alert-info">
+                            <strong>Currently Assigned To:</strong><br>
+                            {{ ticket.assigned_staff.get_full_name }}<br>
+                            <small class="text-muted">Assigned on {{ ticket.updated_at|date:"M d, Y" }}</small>
+                        </div>
+                    {% endif %}
+                    <form method="post" action="{% url 'admin_panel:update_ticket_assignment' ticket.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">{% if ticket.assigned_staff %}Reassign to{% else %}Assign to{% endif %}</label>
+                            <select name="staff_id" class="form-select" required>
+                                <option value="">Choose staff member...</option>
+                                {% for staff in staff_members %}
+                                    <option value="{{ staff.id }}" {% if staff == ticket.assigned_staff %}selected{% endif %}>
+                                        {{ staff.get_full_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            {% if ticket.assigned_staff %}Reassign Staff{% else %}Assign Staff{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ticket Status -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Ticket Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-{% if ticket.status == 'open' %}warning{% elif ticket.status == 'in_progress' %}info{% elif ticket.status == 'resolved' %}success{% else %}secondary{% endif %}">
+                        Current Status: <strong>{{ ticket.get_status_display }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ ticket.user.get_full_name }}</p>
+                    <p><strong>Email:</strong> {{ ticket.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ ticket.user.phone_number|default:"Not provided" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

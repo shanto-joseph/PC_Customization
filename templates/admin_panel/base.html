@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-12 col-lg-2">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'admin_panel:dashboard' %}" 
+                           class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                        <a href="{% url 'admin_panel:users' %}" 
+                           class="list-group-item list-group-item-action {% if 'users' in request.path %}active{% endif %}">
+                            <i class="fas fa-users me-2"></i> Users
+                        </a>
+                        <a href="{% url 'admin_panel:staff' %}" 
+                           class="list-group-item list-group-item-action {% if 'staff' in request.path %}active{% endif %}">
+                            <i class="fas fa-user-tie me-2"></i> Staff
+                        </a>
+                        <a href="{% url 'admin_panel:products' %}" 
+                           class="list-group-item list-group-item-action {% if 'products' in request.path %}active{% endif %}">
+                            <i class="fas fa-box me-2"></i> Products
+                        </a>
+                        <a href="{% url 'admin_panel:categories' %}" 
+                           class="list-group-item list-group-item-action {% if 'categories' in request.path %}active{% endif %}">
+                            <i class="fas fa-tags me-2"></i> Categories
+                        </a>
+                        <a href="{% url 'admin_panel:brands' %}" 
+                           class="list-group-item list-group-item-action {% if 'brands' in request.path %}active{% endif %}">
+                            <i class="fas fa-copyright me-2"></i> Brands
+                        </a>
+                        <a href="{% url 'admin_panel:orders' %}" 
+                           class="list-group-item list-group-item-action {% if 'orders' in request.path %}active{% endif %}">
+                            <i class="fas fa-shopping-cart me-2"></i> Orders
+                        </a>
+                        <a href="{% url 'admin_panel:custom_builds' %}" 
+                           class="list-group-item list-group-item-action {% if 'custom-builds' in request.path %}active{% endif %}">
+                            <i class="fas fa-desktop me-2"></i> Custom Builds
+                        </a>
+                        <a href="{% url 'admin_panel:reviews' %}" 
+                           class="list-group-item list-group-item-action {% if 'reviews' in request.path %}active{% endif %}">
+                            <i class="fas fa-star me-2"></i> Reviews
+                        </a>
+                        <a href="{% url 'admin_panel:support' %}" 
+                           class="list-group-item list-group-item-action {% if 'support' in request.path %}active{% endif %}">
+                            <i class="fas fa-headset me-2"></i> Support
+                        </a>
+                        <a href="{% url 'admin_panel:analytics' %}" 
+                           class="list-group-item list-group-item-action {% if 'analytics' in request.path %}active{% endif %}">
+                            <i class="fas fa-chart-bar me-2"></i> Analytics
+                        </a>
+                        <a href="{% url 'admin_panel:discounts' %}" 
+                           class="list-group-item list-group-item-action {% if 'discounts' in request.path %}active{% endif %}">
+                            <i class="fas fa-percent me-2"></i> Discounts
+                        </a>
+                        <a href="{% url 'accounts:admin_profile' %}" 
+                           class="list-group-item list-group-item-action {% if 'profile' in request.path %}active{% endif %}">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <div class="col-12 col-lg-10">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

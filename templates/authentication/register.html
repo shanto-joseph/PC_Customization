@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% block title %}Register | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0 fw-bold">Create an Account</h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post" class="needs-validation" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <!-- Username -->
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa fa-user"></i></span>
+                                    <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required>
+                                </div>
+                                <div class="invalid-feedback">Please choose a username.</div>
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa fa-envelope"></i></span>
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                                </div>
+                                <div class="invalid-feedback">Please enter a valid email address.</div>
+                            </div>
+                            
+                            <!-- First Name -->
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Enter your first name" required>
+                                <div class="invalid-feedback">Please enter your first name.</div>
+                            </div>
+                            
+                            <!-- Last Name -->
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Enter your last name" required>
+                                <div class="invalid-feedback">Please enter your last name.</div>
+                            </div>
+                            
+                            <!-- Phone Number -->
+                            <div class="col-md-6 mb-3">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa fa-phone"></i></span>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" placeholder="Enter your phone number" required>
+                                </div>
+                                <div class="invalid-feedback">Please enter a valid phone number.</div>
+                            </div>
+                            
+                            <!-- Profile Image -->
+                            <div class="col-md-6 mb-3">
+                                <label for="profile_image" class="form-label">Profile Image</label>
+                                <input type="file" class="form-control" id="profile_image" name="profile_image" accept="image/*">
+                                <div class="form-text">Optional. Max file size: 2MB.</div>
+                            </div>
+                            
+                            <!-- Password -->
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fa fa-eye-slash" id="toggleIcon"></i>
+                                    </button>
+                                </div>
+                                <div class="password-strength mt-1" id="password-strength"></div>
+                                <div class="invalid-feedback">Please enter a password.</div>
+                            </div>
+                            
+                            <!-- Confirm Password -->
+                            <div class="col-md-6 mb-3">
+                                <label for="confirm_password" class="form-label">Confirm Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
+                                </div>
+                                <div class="invalid-feedback">Passwords do not match.</div>
+                            </div>
+                            
+                            <!-- Terms and Conditions -->
+                            <div class="col-12 mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                                    <label class="form-check-label" for="terms">
+                                        I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>
+                                    </label>
+                                    <div class="invalid-feedback">You must agree before submitting.</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <div class="col-12">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">Register</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <div class="text-muted">Already have an account? <a href="{% url 'accounts:login' %}" class="text-primary fw-bold">Sign in</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms and Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Introduction</h6>
+                <p>Welcome to PC Customization Shop. By accessing our website and services, you agree to be bound by these Terms and Conditions.</p>
+                
+                <h6>2. Account Registration</h6>
+                <p>When you create an account, you must provide accurate and complete information. You are solely responsible for the activity that occurs on your account.</p>
+                
+                <h6>3. Privacy</h6>
+                <p>Our Privacy Policy describes how we handle the information you provide to us when you use our services.</p>
+                
+                <h6>4. Orders and Payments</h6>
+                <p>By placing an order, you agree to pay the specified amount. Payment details provided must be valid and you must be authorized to use them.</p>
+                
+                <h6>5. Product Returns</h6>
+                <p>Returns are accepted within 7 days of delivery for unopened products. Custom-built PCs are subject to different return policies.</p>
+                
+                <h6>6. Limitation of Liability</h6>
+                <p>We shall not be liable for any indirect, incidental, special, consequential or punitive damages resulting from your use of our services.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        
+        // Check password matching
+        var password = document.getElementById('password');
+        var confirm = document.getElementById('confirm_password');
+        
+        function validatePassword() {
+            if (password.value != confirm.value) {
+                confirm.setCustomValidity("Passwords don't match");
+            } else {
+                confirm.setCustomValidity('');
+            }
+        }
+        
+        password.addEventListener('change', validatePassword);
+        confirm.addEventListener('keyup', validatePassword);
+        
+        // Password strength checker
+        password.addEventListener('input', function() {
+            const strengthBar = document.getElementById('password-strength');
+            const val = password.value;
+            
+            let strength = 0;
+            if (val.match(/[a-z]+/)) strength += 1;
+            if (val.match(/[A-Z]+/)) strength += 1;
+            if (val.match(/[0-9]+/)) strength += 1;
+            if (val.match(/[^a-zA-Z0-9]+/)) strength += 1;
+            if (val.length >= 8) strength += 1;
+            
+            switch (strength) {
+                case 0:
+                    strengthBar.innerHTML = '';
+                    break;
+                case 1:
+                    strengthBar.innerHTML = '<div class="progress" style="height: 5px;"><div class="progress-bar bg-danger" style="width: 20%"></div></div><small class="text-danger">Very Weak</small>';
+                    break;
+                case 2:
+                    strengthBar.innerHTML = '<div class="progress" style="height: 5px;"><div class="progress-bar bg-warning" style="width: 40%"></div></div><small class="text-warning">Weak</small>';
+                    break;
+                case 3:
+                    strengthBar.innerHTML = '<div class="progress" style="height: 5px;"><div class="progress-bar bg-info" style="width: 60%"></div></div><small class="text-info">Medium</small>';
+                    break;
+                case 4:
+                    strengthBar.innerHTML = '<div class="progress" style="height: 5px;"><div class="progress-bar bg-primary" style="width: 80%"></div></div><small class="text-primary">Strong</small>';
+                    break;
+                case 5:
+                    strengthBar.innerHTML = '<div class="progress" style="height: 5px;"><div class="progress-bar bg-success" style="width: 100%"></div></div><small class="text-success">Very Strong</small>';
+                    break;
+            }
+        });
+        
+        // Form validation
+        Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Toggle password visibility
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    }
+});
+</script>
+{% endblock %}

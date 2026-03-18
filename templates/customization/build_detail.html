@@ -1,0 +1,425 @@
+{% extends 'base.html' %}
+{% block title %}Build Details | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Build Details -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">{{ build.name }}</h4>
+                        <div>
+                            <span class="badge bg-{% if build.status == 'pending' %}warning{% elif build.status == 'approved' %}info{% elif build.status == 'rejected' %}danger{% elif build.status == 'paid' %}success{% else %}primary{% endif %} me-2">
+                                {{ build.get_status_display }}
+                            </span>
+                            {% if build.status == 'approved' %}
+                                <a href="{% url 'customization:proceed_to_payment' build.id %}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-credit-card me-1"></i> Pay Now
+                                </a>
+                            {% elif build.status == 'paid' or build.status == 'in_progress' or build.status == 'assembling' or build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+                                <button class="btn btn-primary btn-sm" onclick="generateInvoice()">
+                                    <i class="fas fa-download me-1"></i> Download Invoice
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if build.status == 'rejected' and build.rejection_reason %}
+                        <div class="alert alert-danger mt-3 mb-0">
+                            <h5 class="alert-heading">Rejection Reason:</h5>
+                            <p class="mb-0">{{ build.rejection_reason }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>CPU</td>
+                                    <td>{{ build.cpu.name }}</td>
+                                    <td>₹{{ build.cpu.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Motherboard</td>
+                                    <td>{{ build.motherboard.name }}</td>
+                                    <td>₹{{ build.motherboard.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>RAM</td>
+                                    <td>{{ build.ram.name }}</td>
+                                    <td>₹{{ build.ram.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>GPU</td>
+                                    <td>{{ build.gpu.name }}</td>
+                                    <td>₹{{ build.gpu.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Storage</td>
+                                    <td>{{ build.storage.name }}</td>
+                                    <td>₹{{ build.storage.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Case</td>
+                                    <td>{{ build.case.name }}</td>
+                                    <td>₹{{ build.case.price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Power Supply</td>
+                                    <td>{{ build.power_supply.name }}</td>
+                                    <td>₹{{ build.power_supply.price }}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Components Total:</strong></td>
+                                    <td><strong>₹{{ build.get_components_total }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Service Charge:</strong></td>
+                                    <td><strong>₹{{ build.service_charge }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Grand Total:</strong></td>
+                                    <td><strong>₹{{ build.get_total_price }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {% if build.assembly_notes %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Assembly Notes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ build.assembly_notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Build Status -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Build Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item {% if build.status != 'rejected' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Build Submitted</h6>
+                                <p class="text-muted">{{ build.created_at|date:"M d, Y H:i" }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if build.status == 'approved' or build.status == 'paid' or build.status == 'in_progress' or build.status == 'assembling' or build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Build Approved</h6>
+                                <p class="text-muted">Your build has been approved</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'paid' or build.status == 'in_progress' or build.status == 'assembling' or build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Payment Received</h6>
+                                <p class="text-muted">Payment has been processed successfully</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'in_progress' or build.status == 'assembling' or build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Assembly In Progress</h6>
+                                <p class="text-muted">Your PC is being built</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Testing</h6>
+                                <p class="text-muted">Quality testing in progress</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'shipping' or build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Shipped</h6>
+                                <p class="text-muted">Your PC has been shipped</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'delivered' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Delivered</h6>
+                                <p class="text-muted">Your PC has been delivered</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if build.status == 'rejected' %}
+                        <div class="timeline-item active">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Build Rejected</h6>
+                                <p class="text-muted">{{ build.rejection_reason }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <small class="text-muted">Created</small><br>
+                            <small>{{ build.created_at|date:"M d, Y" }}</small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Last Updated</small><br>
+                            <small>{{ build.updated_at|date:"M d, Y" }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipping Address and Payment Information Section -->
+    <div class="row mt-4">
+        <!-- Shipping Address (Left) -->
+        <div class="col-md-6">
+            {% if build.shipping_address %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Shipping Address</h5>
+                    {% if build.status == 'approved' %}
+                        <a href="{% url 'customization:proceed_to_payment' build.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit me-1"></i>Change
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <address class="mb-0">
+                        <strong>{{ build.shipping_address.address_line1 }}</strong><br>
+                        {% if build.shipping_address.address_line2 %}
+                            {{ build.shipping_address.address_line2 }}<br>
+                        {% endif %}
+                        {{ build.shipping_address.city }}, {{ build.shipping_address.state }}<br>
+                        {{ build.shipping_address.postal_code }}<br>
+                        {{ build.shipping_address.country }}
+                    </address>
+                </div>
+            </div>
+            {% elif build.status == 'approved' %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Shipping Address</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Please add a shipping address to proceed with payment.</p>
+                    <a href="{% url 'customization:proceed_to_payment' build.id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add Address
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Payment Information (Right) -->
+        <div class="col-md-6">
+            {% if build.status == 'paid' or build.status == 'in_progress' or build.status == 'assembling' or build.status == 'testing' or build.status == 'shipping' or build.status == 'delivered' %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Payment Information</h5>
+                </div>
+                <div class="card-body">
+                    {% with payment=build.payment_set.first %}
+                    {% if payment %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Payment Method:</span>
+                            <span class="text-capitalize">{{ payment.get_payment_method_display }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Amount Paid:</span>
+                            <span>₹{{ payment.amount }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Payment Date:</span>
+                            <span>{{ payment.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Status:</span>
+                            <span class="badge bg-success">{{ payment.get_status_display }}</span>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Payment information not available.</p>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+            {% elif build.status == 'approved' and build.shipping_address %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Payment</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Your build is approved and ready for payment.</p>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span><strong>Total Amount:</strong></span>
+                        <span><strong>₹{{ build.get_total_price }}</strong></span>
+                    </div>
+                    <a href="{% url 'customization:proceed_to_payment' build.id %}" class="btn btn-success btn-sm w-100">
+                        <i class="fas fa-credit-card me-1"></i>Proceed to Payment
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Support Section (Bottom Center) -->
+    <div class="row mt-4">
+        <div class="col-md-6 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3 text-center">
+                    <h5 class="mb-0">Need Help?</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted mb-3">Have questions about your build? Our support team is here to help!</p>
+                    <a href="{% url 'support:create_ticket' %}" class="btn btn-primary">
+                        <i class="fas fa-headset me-2"></i>Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    width: 2px;
+    background: #e9ecef;
+    top: 0;
+    bottom: 0;
+    left: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 50px;
+    padding-bottom: 30px;
+}
+
+.timeline-point {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 13px;
+    border: 2px solid #e9ecef;
+    background: #fff;
+    border-radius: 50%;
+}
+
+.timeline-item.active .timeline-point {
+    border-color: #28a745;
+    background: #28a745;
+}
+
+.timeline-content {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.timeline-item.active .timeline-content {
+    background: #e8f5e9;
+}
+</style>
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script>
+function generateInvoice() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(20);
+    doc.text('Custom PC Build Invoice', 20, 20);
+
+    // Customer Info
+    doc.setFontSize(12);
+    doc.text('Customer Details:', 20, 40);
+    doc.text(`Name: {{ build.user.get_full_name }}`, 20, 50);
+    doc.text(`Email: {{ build.user.email }}`, 20, 60);
+    doc.text(`Build Name: {{ build.name }}`, 20, 70);
+    doc.text(`Date: {{ build.created_at|date:"M d, Y" }}`, 20, 80);
+
+    // Components Table
+    const components = [
+        ['CPU', '{{ build.cpu.name }}', '₹{{ build.cpu.price }}'],
+        ['Motherboard', '{{ build.motherboard.name }}', '₹{{ build.motherboard.price }}'],
+        ['RAM', '{{ build.ram.name }}', '₹{{ build.ram.price }}'],
+        ['GPU', '{{ build.gpu.name }}', '₹{{ build.gpu.price }}'],
+        ['Storage', '{{ build.storage.name }}', '₹{{ build.storage.price }}'],
+        ['Case', '{{ build.case.name }}', '₹{{ build.case.price }}'],
+        ['Power Supply', '{{ build.power_supply.name }}', '₹{{ build.power_supply.price }}']
+    ];
+
+    doc.autoTable({
+        startY: 100,
+        head: [['Component', 'Product', 'Price']],
+        body: components,
+    });
+
+    // Total
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.text('Components Total:', 140, finalY);
+    doc.text('₹{{ build.get_components_total }}', 180, finalY);
+    doc.text('Service Charge:', 140, finalY + 10);
+    doc.text('₹{{ build.service_charge }}', 180, finalY + 10);
+    doc.text('Grand Total:', 140, finalY + 20);
+    doc.text('₹{{ build.get_total_price }}', 180, finalY + 20);
+
+    // Save PDF
+    doc.save(`custom-pc-build-{{ build.id }}.pdf`);
+}
+</script>
+{% endblock %}
+{% endblock %}

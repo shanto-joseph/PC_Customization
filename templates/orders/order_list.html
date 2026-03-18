@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% block title %}My Orders | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">My Orders</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if orders %}
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                <td>₹{{ order.total_amount }}</td>
+                                <td>
+                                    <span class="badge bg-{% if order.status == 'pending' %}warning{% elif order.status == 'processing' %}info{% elif order.status == 'shipped' %}primary{% elif order.status == 'delivered' %}success{% else %}danger{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'orders:track_order' order.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-truck"></i> Track
+                                        </a>
+                                        <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-eye"></i> Details
+                                        </a>
+                                        {% if order.status == 'delivered' %}
+                                            {% for item in order.items.all %}
+                                                {% with has_reviewed=item.product.customer_reviews.all|length %}
+                                                    {% if has_reviewed == 0 %}
+                                                        <button class="btn btn-sm btn-outline-success" onclick="showAddReviewModal({{ item.product.id }}, '{{ item.product.name|escapejs }}')">
+                                                            <i class="fas fa-star"></i> Review
+                                                        </button>
+                                                    {% else %}
+                                                        <button class="btn btn-sm btn-outline-secondary" onclick="showViewReviewModal({{ item.product.id }})">
+                                                            <i class="fas fa-eye"></i> View Review
+                                                        </button>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-shopping-bag text-muted fa-3x mb-3"></i>
+            <h3>No orders yet</h3>
+            <p class="text-muted">You haven't placed any orders yet.</p>
+            <a href="{% url 'products:product_list' %}" class="btn btn-primary">Start Shopping</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Add Review Modal -->
+<div class="modal fade" id="addReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Write a Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="reviewForm" onsubmit="submitReview(event)">
+                {% csrf_token %}
+                <input type="hidden" id="product_id" name="product_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Rating</label>
+                        <div class="star-rating">
+                            <div class="stars">
+                                {% for i in "12345"|make_list %}
+                                <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" required>
+                                <label for="star{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Your Review</label>
+                        <textarea name="comment" class="form-control" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Review Modal -->
+<div class="modal fade" id="viewReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Your Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h6>Rating</h6>
+                    <div class="rating-display"></div>
+                </div>
+                <div class="mb-3">
+                    <h6>Your Comment</h6>
+                    <p class="review-comment"></p>
+                </div>
+                <div class="text-muted review-date"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Star Rating Input Styles */
+.star-rating .stars {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+.star-rating input[type="radio"] {
+    display: none;
+}
+
+.star-rating label {
+    color: #ddd;
+    cursor: pointer;
+    padding: 0 0.2em;
+    font-size: 2em;
+    transition: color 0.2s;
+}
+
+.star-rating input[type="radio"]:checked ~ label {
+    color: #ddd;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input[type="radio"]:checked + label {
+    color: #ffc107;
+}
+
+/* Rating Display Styles */
+.rating-display {
+    color: #ffc107;
+    font-size: 1.5em;
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showAddReviewModal(productId, productName) {
+    const modal = document.getElementById('addReviewModal');
+    modal.querySelector('.modal-title').textContent = `Write a Review for ${productName}`;
+    modal.querySelector('#product_id').value = productId;
+    
+    // Reset form
+    modal.querySelector('form').reset();
+    modal.querySelectorAll('.star-rating label').forEach(star => star.style.color = '#ddd');
+    
+    const reviewModal = new bootstrap.Modal(modal);
+    reviewModal.show();
+}
+
+function showViewReviewModal(productId) {
+    fetch(`/reviews/product/${productId}/view/`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const modal = document.getElementById('viewReviewModal');
+            const review = data.review;
+            
+            // Display rating stars
+            const ratingDisplay = modal.querySelector('.rating-display');
+            ratingDisplay.innerHTML = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+            
+            // Display comment and date
+            modal.querySelector('.review-comment').textContent = review.comment;
+            modal.querySelector('.review-date').textContent = `Posted on ${review.created_at}`;
+            
+            const viewModal = new bootstrap.Modal(modal);
+            viewModal.show();
+        } else {
+            showNotification('Error loading review', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error loading review', 'error');
+    });
+}
+
+function submitReview(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const productId = form.querySelector('#product_id').value;
+
+    fetch(`/reviews/product/${productId}/add/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('Review submitted successfully');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addReviewModal'));
+            modal.hide();
+            location.reload(); // Reload to update the review buttons
+        } else {
+            showNotification(data.message || 'Error submitting review', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error submitting review', 'error');
+    });
+}
+
+// Initialize star rating functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const starLabels = document.querySelectorAll('.star-rating label');
+    starLabels.forEach(label => {
+        label.addEventListener('click', function() {
+            const rating = this.previousElementSibling.value;
+            const stars = this.closest('.stars').querySelectorAll('label');
+            stars.forEach(star => star.style.color = '#ddd');
+            for(let i = 0; i < rating; i++) {
+                stars[i].style.color = '#ffc107';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

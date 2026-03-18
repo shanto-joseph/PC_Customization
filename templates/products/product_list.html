@@ -1,0 +1,209 @@
+﻿{% extends 'base.html' %}
+{% block title %}Products | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <div class="row">
+        <!-- Sidebar Filters -->
+        <div class="col-md-3 col-lg-2 mb-4">
+            <div class="card shadow-sm sticky-top" style="top: 2rem; z-index: 1000;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="filterForm">
+                        <!-- Search -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Search</label>
+                            <input type="text" name="search" class="form-control" placeholder="Search products..." value="{{ request.GET.search }}">
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Category</label>
+                            <select name="category" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"i" %}selected{% endif %}>{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Brand Filter -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Brand</label>
+                            <select name="brand" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Brands</option>
+                                {% for brand in brands %}
+                                <option value="{{ brand.id }}" {% if request.GET.brand == brand.id|stringformat:"i" %}selected{% endif %}>{{ brand.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Price Range Filter -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Price Range</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" name="min_price" class="form-control" placeholder="Min" value="{{ request.GET.min_price }}">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" name="max_price" class="form-control" placeholder="Max" value="{{ request.GET.max_price }}">
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2 mt-2">
+                                <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary">Clear Filters</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="col-md-9 col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">All Products</h2>
+                <span class="text-muted">{{ products|length }} products found</span>
+            </div>
+
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                {% for product in products %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 hover-shadow transition-all">
+                        {% if product.image %}
+                        <div class="position-relative overflow-hidden">
+                            <img src="{{ product.image.url }}" class="card-img-top product-image" alt="{{ product.name }}" style="height: 200px; object-fit: cover; transition: transform 0.3s ease;">
+                            {% if product.stock <= 0 %}
+                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
+                                <span class="badge bg-danger fs-5">Out of Stock</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="card-body">
+                            <h5 class="card-title text-truncate" title="{{ product.name }}">{{ product.name }}</h5>
+                            <p class="card-text text-muted small" style="height: 48px; overflow: hidden;">{{ product.description|truncatewords:15 }}</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <span class="h5 mb-0 text-primary fw-bold">{{ product.price }}</span>
+                            </div>
+                            
+                            {% if product.stock > 0 and product.stock <= 5 %}
+                            <div class="text-warning small mt-2">
+                                <i class="fas fa-exclamation-circle me-1"></i>Only {{ product.stock }} left!
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-footer bg-white border-top-0 pb-3">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-primary btn-sm flex-grow-1" title="View Details">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <button class="btn btn-primary btn-sm flex-grow-1" onclick="addToCart({{ product.id }})" title="Add to Cart" {% if product.stock <= 0 %}disabled{% endif %}>
+                                    <i class="fas fa-shopping-cart"></i> Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-search fa-4x text-muted opacity-50"></i>
+                        </div>
+                        <h3>No products found</h3>
+                        <p class="text-muted">Try adjusting your filters or search criteria.</p>
+                        <a href="{% url 'products:product_list' %}" class="btn btn-primary mt-3">View All Products</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+.product-image:hover {
+    transform: scale(1.05);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addToCart(productId) {
+    {% if not user.is_authenticated %}
+        showNotification('Please log in to add items to your cart', 'error');
+        setTimeout(() => {
+            window.location.href = '{% url "accounts:login" %}?next=' + window.location.pathname;
+        }, 1500);
+        return;
+    {% endif %}
+
+    const btn = event.currentTarget;
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('product_id', productId);
+
+    fetch('/cart/add/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data && data.status === 'success') {
+            const cartBadge = document.querySelector('#cart-badge');
+            if (cartBadge) {
+                cartBadge.textContent = data.cart_items_count;
+                cartBadge.style.display = 'inline';
+            }
+            showNotification('Product added to cart successfully!', 'success');
+        } else {
+            showNotification('Error adding product to cart', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error adding product to cart', 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

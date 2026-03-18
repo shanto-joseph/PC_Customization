@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}Track Order | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Track Order #{{ order.id }}</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Order Status Timeline -->
+                    <div class="timeline">
+                        <div class="timeline-item {% if order.status == 'pending' or order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Order Placed</h6>
+                                <p class="text-muted">{{ order.created_at|date:"M d, Y H:i" }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Processing</h6>
+                                <p class="text-muted">Order is being processed</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item {% if order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Shipped</h6>
+                                <p class="text-muted">Order has been shipped</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item {% if order.status == 'delivered' %}active{% endif %}">
+                            <div class="timeline-point"></div>
+                            <div class="timeline-content">
+                                <h6>Delivered</h6>
+                                <p class="text-muted">Order has been delivered</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Details -->
+                    <div class="mt-4">
+                        <h5>Order Details</h5>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order.items.all %}
+                                    <tr>
+                                        <td>{{ item.product.name }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>₹{{ item.price }}</td>
+                                        <td>₹{{ item.get_total }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                        <td><strong>₹{{ order.total_amount }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Shipping Address -->
+                    <div class="mt-4">
+                        <h5>Shipping Address</h5>
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="mb-1"><strong>{{ user.get_full_name }}</strong></p>
+                                <p class="mb-1">{{ order.shipping_address.address_line1|default:"" }}</p>
+                                {% if order.shipping_address.address_line2 %}
+                                    <p class="mb-1">{{ order.shipping_address.address_line2 }}</p>
+                                {% endif %}
+                                <p class="mb-1">{{ order.shipping_address.city|default:"" }}, {{ order.shipping_address.state|default:"" }}</p>
+                                <p class="mb-1">{{ order.shipping_address.postal_code|default:"" }}</p>
+                                <p class="mb-0">{{ order.shipping_address.country|default:"" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Support Button -->
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'support:create_ticket' %}?order={{ order.id }}" class="btn btn-outline-primary">
+                            <i class="fas fa-headset me-2"></i>Need Help?
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    width: 2px;
+    background: #e9ecef;
+    top: 0;
+    bottom: 0;
+    left: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 50px;
+    padding-bottom: 30px;
+}
+
+.timeline-point {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 13px;
+    border: 2px solid #e9ecef;
+    background: #fff;
+    border-radius: 50%;
+}
+
+.timeline-item.active .timeline-point {
+    border-color: #28a745;
+    background: #28a745;
+}
+
+.timeline-content {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.timeline-item.active .timeline-content {
+    background: #e8f5e9;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,687 @@
+{% extends 'base.html' %}
+{% block title %}Build Custom PC | PC Customization Shop{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <!-- Build Progress -->
+    <div class="build-progress mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="h3 mb-0">Build Your Custom PC</h1>
+            <a href="{% url 'customization:my_builds' %}" class="btn btn-outline-primary">
+                <i class="fas fa-list me-2"></i>My Builds
+            </a>
+        </div>
+        <div class="progress" style="height: 8px;">
+            <div class="progress-bar bg-primary" role="progressbar" style="width: 0%;" id="buildProgress"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+            <span class="text-muted small">Select Components</span>
+            <span class="text-muted small" id="progressText">0/7 Components Selected</span>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Recommendation Info Alert -->
+        <div class="col-12 mb-3">
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fas fa-lightbulb me-2"></i>
+                <strong>Smart Recommendations:</strong> Select components to see recommended compatible parts with a <span class="badge bg-success">⭐ Recommended</span> tag!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        
+        <!-- Component Selection -->
+        <div class="col-lg-8">
+            <form method="post" class="needs-validation" novalidate id="buildForm">
+                {% csrf_token %}
+                
+                <!-- Component Navigation -->
+                <div class="component-nav mb-4">
+                    <div class="nav nav-pills nav-fill">
+                        <a class="nav-link active" href="#cpu" data-bs-toggle="tab">
+                            <i class="fas fa-microchip me-2"></i>CPU
+                        </a>
+                        <a class="nav-link" href="#motherboard" data-bs-toggle="tab">
+                            <i class="fas fa-server me-2"></i>Motherboard
+                        </a>
+                        <a class="nav-link" href="#ram" data-bs-toggle="tab">
+                            <i class="fas fa-memory me-2"></i>RAM
+                        </a>
+                        <a class="nav-link" href="#gpu" data-bs-toggle="tab">
+                            <i class="fas fa-tv me-2"></i>GPU
+                        </a>
+                        <a class="nav-link" href="#storage" data-bs-toggle="tab">
+                            <i class="fas fa-hdd me-2"></i>Storage
+                        </a>
+                        <a class="nav-link" href="#case" data-bs-toggle="tab">
+                            <i class="fas fa-desktop me-2"></i>Case
+                        </a>
+                        <a class="nav-link" href="#psu" data-bs-toggle="tab">
+                            <i class="fas fa-plug me-2"></i>PSU
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Component Content -->
+                <div class="tab-content">
+                    <!-- CPU -->
+                    <div class="tab-pane fade show active" id="cpu">
+                        <div class="component-section">
+                            <div class="component-header mb-4">
+                                <h4>Select your CPU (Processor)</h4>
+                                <p class="text-muted">Choose a powerful CPU to drive your system's performance.</p>
+                            </div>
+                            <div class="row g-4">
+                                {% for cpu in cpus %}
+                                <div class="col-md-6">
+                                    <div class="component-card" data-component="cpu" data-id="{{ cpu.id }}" data-price="{{ cpu.price }}" data-name="{{ cpu.name }}" data-brand="{{ cpu.brand.name }}" data-category="{{ cpu.category.name }}">
+                                        <input type="radio" name="cpu" value="{{ cpu.id }}" class="component-radio" required>
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    {% if cpu.image %}
+                                                        <img src="{{ cpu.image.url }}" alt="{{ cpu.name }}" class="component-image me-3">
+                                                    {% endif %}
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center mb-1">
+                                                            <h5 class="card-title mb-0 me-2">{{ cpu.name }}</h5>
+                                                            <span class="badge bg-success recommendation-badge d-none">Recommended</span>
+                                                        </div>
+                                                        <span class="text-primary h5">₹{{ cpu.price }}</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="specs-list">
+                                                    <li><i class="fas fa-microchip me-2"></i>{{ cpu.description }}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <p>No CPUs available.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Motherboard -->
+                    <div class="tab-pane fade" id="motherboard">
+                        <div class="component-section">
+                            <div class="component-header mb-4">
+                                <h4>Select your Motherboard</h4>
+                                <p class="text-muted">The main circuit board that connects all components together.</p>
+                            </div>
+                            <div class="row g-4">
+                                {% for motherboard in motherboards %}
+                                <div class="col-md-6">
+                                    <div class="component-card" data-component="motherboard" data-id="{{ motherboard.id }}" data-price="{{ motherboard.price }}" data-name="{{ motherboard.name }}" data-brand="{{ motherboard.brand.name }}" data-category="{{ motherboard.category.name }}">
+                                        <input type="radio" name="motherboard" value="{{ motherboard.id }}" class="component-radio" required>
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    {% if motherboard.image %}
+                                                        <img src="{{ motherboard.image.url }}" alt="{{ motherboard.name }}" class="component-image me-3">
+                                                    {% endif %}
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center mb-1">
+                                                            <h5 class="card-title mb-0 me-2">{{ motherboard.name }}</h5>
+                                                            <span class="badge bg-success recommendation-badge d-none">Recommended</span>
+                                                        </div>
+                                                        <span class="text-primary h5">₹{{ motherboard.price }}</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="specs-list">
+                                                    <li><i class="fas fa-server me-2"></i>{{ motherboard.description }}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RAM -->
+                    <div class="tab-pane fade" id="ram">
+                        <div class="component-section">
+                            <div class="component-header mb-4">
+                                <h4>Select your RAM</h4>
+                                <p class="text-muted">Choose a compatible RAM module for your build.</p>
+                            </div>
+                            <div class="row g-4">
+                                {% for ram in rams %}
+                                <div class="col-md-6">
+                                    <div class="component-card" data-component="ram" data-id="{{ ram.id }}" data-price="{{ ram.price }}" data-name="{{ ram.name }}" data-brand="{{ ram.brand.name }}" data-category="{{ ram.category.name }}">
+                                        <input type="radio" name="ram" value="{{ ram.id }}" class="component-radio" required>
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    {% if ram.image %}
+                                                        <img src="{{ ram.image.url }}" alt="{{ ram.name }}" class="component-image me-3">
+                                                    {% endif %}
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center mb-1">
+                                                            <h5 class="card-title mb-0 me-2">{{ ram.name }}</h5>
+                                                            <span class="badge bg-success recommendation-badge d-none">Recommended</span>
+                                                        </div>
+                                                        <span class="text-primary h5">₹{{ ram.price }}</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="specs-list">
+                                                    <li><i class="fas fa-memory me-2"></i>{{ ram.description }}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GPU -->
+                    <div class="tab-pane fade" id="gpu">
+                        <div class="component-section">
+                            <div class="component-header mb-4">
+                                <h4>Select your GPU</h4>
+                                <p class="text-muted">Choose a graphics card for your build.</p>
+                            </div>
+                            <div class="row g-4">
+                                {% for gpu in gpus %}
+                                <div class="col-md-6">
+                                    <div class="component-card" data-component="gpu" data-id="{{ gpu.id }}" data-price="{{ gpu.price }}" data-name="{{ gpu.name }}" data-brand="{{ gpu.brand.name }}" data-category="{{ gpu.category.name }}">
+                                        <input type="radio" name="gpu" value="{{ gpu.id }}" class="component-radio" required>
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    {% if gpu.image %}
+                                                        <img src="{{ gpu.image.url }}" alt="{{ gpu.name }}" class="component-image me-3">
+                                                    {% endif %}
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center mb-1">
+                                                            <h5 class="card-title mb-0 me-2">{{ gpu.name }}</h5>
+                                                            <span class="badge bg-success recommendation-badge d-none">Recommended</span>
+                                                        </div>
+                                                        <span class="text-primary h5">₹{{ gpu.price }}</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="specs-list">
+                                                    <li><i class="fas fa-tv me-2"></i>{{ gpu.description }}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Storage -->
+                    <div class="tab-pane fade" id="storage">
+                        <div class="component-section">
+                            <div class="component-header mb-4">
+                                <h4>Select your Storage</h4>
+                                <p class="text-muted">Choose the storage device for your system.</p>
+                            </div>
+                            <div class="row g-4">
+                                {% for storage in storages %}
+                                <div class="col-md-6">
+                                    <div class="component-card" data-component="storage" data-id="{{ storage.id }}" data-price="{{ storage.price }}" data-name="{{ storage.name }}" data-brand="{{ storage.brand.name }}" data-category="{{ storage.category.name }}">
+                                        <input type="radio" name="storage" value="{{ storage.id }}" class="component-radio" required>
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    {% if storage.image %}
+                                                        <img src="{{ storage.image.url }}" alt="{{ storage.name }}" class="component-image me-3">
+                                                    {% endif %}
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center mb-1">
+                                                            <h5 class="card-title mb-0 me-2">{{ storage.name }}</h5>
+                                                            <span class="badge bg-success recommendation-badge d-none">Recommended</span>
+                                                        </div>
+                                                        <span class="text-primary h5">₹{{ storage.price }}</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="specs-list">
+                                                    <li><i class="fas fa-hdd me-2"></i>{{ storage.description }}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Case -->
+                    <div class="tab-pane fade" id="case">
+                        <div class="component-section">
+                            <div class="component-header mb-4">
+                                <h4>Select your Case</h4>
+                                <p class="text-muted">Choose a PC case that fits your components and style.</p>
+                            </div>
+                            <div class="row g-4">
+                                {% for case in cases %}
+                                <div class="col-md-6">
+                                    <div class="component-card" data-component="case" data-id="{{ case.id }}" data-price="{{ case.price }}" data-name="{{ case.name }}" data-brand="{{ case.brand.name }}" data-category="{{ case.category.name }}">
+                                        <input type="radio" name="case" value="{{ case.id }}" class="component-radio" required>
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    {% if case.image %}
+                                                        <img src="{{ case.image.url }}" alt="{{ case.name }}" class="component-image me-3">
+                                                    {% endif %}
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center mb-1">
+                                                            <h5 class="card-title mb-0 me-2">{{ case.name }}</h5>
+                                                            <span class="badge bg-success recommendation-badge d-none">Recommended</span>
+                                                        </div>
+                                                        <span class="text-primary h5">₹{{ case.price }}</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="specs-list">
+                                                    <li><i class="fas fa-box-archive"></i>{{ case.description }}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PSU -->
+                    <div class="tab-pane fade" id="psu">
+                        <div class="component-section">
+                            <div class="component-header mb-4">
+                                <h4>Select your Power Supply (PSU)</h4>
+                                <p class="text-muted">The power supply unit converts mains AC electricity to low-voltage DC power for your components. Choose a reliable PSU with sufficient wattage for your build.</p>
+                            </div>
+                            <div class="row g-4">
+                                {% for psu in power_supplies %}
+                                <div class="col-md-6">
+                                    <div class="component-card" data-component="psu" data-id="{{ psu.id }}" data-price="{{ psu.price }}" data-name="{{ psu.name }}" data-brand="{{ psu.brand.name }}" data-category="{{ psu.category.name }}">
+                                        <input type="radio" name="power_supply" value="{{ psu.id }}" class="component-radio" required>
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    {% if psu.image %}
+                                                        <img src="{{ psu.image.url }}" alt="{{ psu.name }}" class="component-image me-3">
+                                                    {% endif %}
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center mb-1">
+                                                            <h5 class="card-title mb-0 me-2">{{ psu.name }}</h5>
+                                                            <span class="badge bg-success recommendation-badge d-none">Recommended</span>
+                                                        </div>
+                                                        <span class="text-primary h5">₹{{ psu.price }}</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="specs-list">
+                                                    <li><i class="fas fa-plug me-2"></i>{{ psu.description }}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden input for build name -->
+                <input type="hidden" name="build_name" id="build_name_input">
+            </form>
+        </div>
+
+        <!-- Build Summary -->
+        <div class="col-lg-4">
+            <div class="card build-summary">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Build Summary</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Build Name -->
+                    <div class="mb-4">
+                        <label class="form-label">Build Name</label>
+                        <input type="text" class="form-control" id="build_name" required>
+                        <div class="invalid-feedback">Please enter a build name.</div>
+                    </div>
+
+                    <!-- Selected Components -->
+                    <div class="selected-components mb-4">
+                        <h6 class="mb-3">Selected Components</h6>
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center" id="cpu-selection">
+                                <div>
+                                    <i class="fas fa-microchip me-2"></i>
+                                    <span>CPU</span>
+                                </div>
+                                <span class="text-muted component-name">Not Selected</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center" id="motherboard-selection">
+                                <div>
+                                    <i class="fas fa-server me-2"></i>
+                                    <span>Motherboard</span>
+                                </div>
+                                <span class="text-muted component-name">Not Selected</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center" id="ram-selection">
+                                <div>
+                                    <i class="fas fa-memory me-2"></i>
+                                    <span>RAM</span>
+                                </div>
+                                <span class="text-muted component-name">Not Selected</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center" id="gpu-selection">
+                                <div>
+                                    <i class="fas fa-tv me-2"></i>
+                                    <span>GPU</span>
+                                </div>
+                                <span class="text-muted component-name">Not Selected</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center" id="storage-selection">
+                                <div>
+                                    <i class="fas fa-hdd me-2"></i>
+                                    <span>Storage</span>
+                                </div>
+                                <span class="text-muted component-name">Not Selected</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center" id="case-selection">
+                                <div>
+                                    <i class="fas fa-hard-drive"></i>
+                                    <span>Case</span>
+                                </div>
+                                <span class="text-muted component-name">Not Selected</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center" id="psu-selection">
+                                <div>
+                                    <i class="fas fa-plug me-2"></i>
+                                    <span>PSU</span>
+                                </div>
+                                <span class="text-muted component-name">Not Selected</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Price Breakdown -->
+                    <div class="price-breakdown mb-4">
+                        <h6 class="mb-3">Price Breakdown</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Components Total</span>
+                            <span id="components-total">₹0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Assembly Service</span>
+                            <span>₹1,500</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total</strong>
+                            <strong id="total-price">₹1,500</strong>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-primary btn-lg" onclick="submitBuildForm()">
+                            Submit Build Request
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.component-nav .nav-link {
+    color: var(--bs-gray-600);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.component-nav .nav-link:hover {
+    background-color: var(--bs-gray-100);
+}
+
+.component-nav .nav-link.active {
+    border-radius: 0.5rem;
+    background-color: #c0dafd;
+    color:var(--bs-gray-200);
+}
+
+.component-card {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.component-card:hover {
+    transform: translateY(-2px);
+}
+
+.component-card .component-radio {
+    position: absolute;
+    opacity: 0;
+}
+
+.component-card .card {
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.component-card .component-radio:checked + .card {
+    border-color: var(--primary-color);
+    background-color: var(--bs-gray-100);
+}
+
+.component-image {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+.specs-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.specs-list li {
+    margin-bottom: 0.5rem;
+    color: var(--bs-gray-600);
+}
+
+.build-summary {
+    position: sticky;
+    top: 2rem;
+}
+
+.selected-components .list-group-item {
+    padding: 1rem 0;
+    border-color: var(--bs-gray-200);
+}
+
+.price-breakdown {
+    background-color: var(--bs-gray-100);
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+.recommendation-badge {
+    font-size: 0.75rem;
+    animation: fadeIn 0.3s ease-in-out;
+    position: relative;
+}
+
+.recommendation-badge::before {
+    content: "⭐";
+    margin-right: 0.25rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.component-card.recommended .card {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    transform: translateY(-1px);
+}
+
+.component-card.recommended .card::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border-radius: 0.5rem;
+    z-index: -1;
+    opacity: 0.1;
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/pc-builder-recommendations.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buildForm = document.getElementById('buildForm');
+    const componentCards = document.querySelectorAll('.component-card');
+    const progressBar = document.getElementById('buildProgress');
+    const progressText = document.getElementById('progressText');
+    const buildNameInput = document.getElementById('build_name');
+    const hiddenBuildNameInput = document.getElementById('build_name_input');
+    
+    // Initialize recommendation system
+    const recommendationSystem = new PCBuilderRecommendations();
+    
+    function updateProgress() {
+        const totalComponents = 7;
+        const selectedComponents = document.querySelectorAll('.component-radio:checked').length;
+        const progress = (selectedComponents / totalComponents) * 100;
+        
+        progressBar.style.width = `${progress}%`;
+        progressText.textContent = `${selectedComponents}/${totalComponents} Components Selected`;
+    }
+    
+    componentCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const radio = this.querySelector('.component-radio');
+            radio.checked = true;
+            updateProgress();
+            updateBuildSummary();
+            updateRecommendations();
+        });
+    });
+    
+    function updateBuildSummary() {
+        let total = 1500; // Service charge
+        const selectedComponents = document.querySelectorAll('.component-radio:checked');
+        
+        // Reset all component selections
+        const componentSelections = document.querySelectorAll('.list-group-item');
+        componentSelections.forEach(selection => {
+            const nameSpan = selection.querySelector('.component-name');
+            if (nameSpan) {
+                nameSpan.textContent = 'Not Selected';
+                nameSpan.className = 'text-muted component-name';
+            }
+        });
+        
+        selectedComponents.forEach(component => {
+            const card = component.closest('.component-card');
+            const componentType = card.dataset.component;
+            const componentName = card.dataset.name;
+            const price = parseFloat(card.dataset.price);
+            
+            // Update the component in the summary
+            const selectionElement = document.getElementById(`${componentType}-selection`);
+            if (selectionElement) {
+                const nameSpan = selectionElement.querySelector('.component-name');
+                if (nameSpan) {
+                    nameSpan.textContent = `${componentName} - ₹${price.toFixed(2)}`;
+                    nameSpan.className = 'text-success component-name';
+                }
+            }
+            
+            total += price;
+        });
+        
+        document.getElementById('components-total').textContent = `₹${(total - 1500).toFixed(2)}`;
+        document.getElementById('total-price').textContent = `₹${total.toFixed(2)}`;
+    }
+
+    // Update build name in hidden input when the visible input changes
+    buildNameInput.addEventListener('input', function() {
+        hiddenBuildNameInput.value = this.value;
+    });
+
+    // Recommendation logic using the new system
+    function updateRecommendations() {
+        // Get currently selected components
+        const selectedComponents = {};
+        document.querySelectorAll('.component-radio:checked').forEach(radio => {
+            const card = radio.closest('.component-card');
+            const componentType = card.dataset.component;
+            selectedComponents[componentType] = {
+                name: card.dataset.name,
+                brand: card.dataset.brand,
+                category: card.dataset.category,
+                id: card.dataset.id
+            };
+        });
+
+        // Update recommendations using the new system
+        recommendationSystem.updateRecommendations(selectedComponents);
+    }
+});
+
+function submitBuildForm() {
+    const buildName = document.getElementById('build_name').value;
+    const hiddenBuildNameInput = document.getElementById('build_name_input');
+    const buildForm = document.getElementById('buildForm');
+    const totalComponents = 7;
+    const selectedComponents = document.querySelectorAll('.component-radio:checked').length;
+
+    // Check if build name is filled
+    if (!buildName.trim()) {
+        alert('Please enter a build name');
+        return;
+    }
+
+    // Set the build name in the hidden input
+    hiddenBuildNameInput.value = buildName;
+
+    // Check if all components are selected
+    if (selectedComponents < totalComponents) {
+        alert(`Please select all components (${selectedComponents}/${totalComponents} selected)`);
+        return;
+    }
+
+    // Submit the form
+    buildForm.submit();
+}
+</script>
+{% endblock %}

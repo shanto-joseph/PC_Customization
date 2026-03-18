@@ -1,0 +1,240 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Manage Staff</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+            <i class="fas fa-plus"></i> Add Staff Member
+        </button>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Joined</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for staff in staff_members %}
+                        <tr>
+                            <td>#{{ staff.id }}</td>
+                            <td>{{ staff.get_full_name }}</td>
+                            <td>{{ staff.email }}</td>
+                            <td>{{ staff.phone_number|default:"-" }}</td>
+                            <td>{{ staff.date_joined|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="badge bg-{% if staff.is_active %}success{% else %}danger{% endif %}">
+                                    {{ staff.is_active|yesno:"Active,Inactive" }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-info" onclick="editStaff({{ staff.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteStaff({{ staff.id }})">
+                                        <i class="fas fa-user"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Staff Modal -->
+<div class="modal fade" id="addStaffModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Staff Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'admin_panel:staff' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="first_name" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="last_name" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" name="phone_number" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Staff Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Staff Modal -->
+<div class="modal fade" id="editStaffModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Staff Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="staff_id" id="editStaffId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" id="editEmail" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="first_name" id="editFirstName" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="last_name" id="editLastName" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" name="phone_number" id="editPhoneNumber" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="is_active" id="editIsActive" class="form-check-input">
+                            <label class="form-check-label" for="editIsActive">Active</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Staff Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Staff Form -->
+<form id="deleteStaffForm" method="post" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="staff_id" id="deleteStaffId">
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add this to your existing JavaScript in the extra_js block
+
+function editStaff(staffId) {
+    // Create headers for AJAX request
+    const headers = new Headers({
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+    });
+
+    // Fetch staff data from the endpoint with proper headers
+    fetch(`/admin/staff/${staffId}/`, {
+        method: 'GET',
+        headers: headers
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Populate the edit form with data
+        document.getElementById('editStaffId').value = data.id;
+        document.getElementById('editEmail').value = data.email;
+        document.getElementById('editFirstName').value = data.first_name;
+        document.getElementById('editLastName').value = data.last_name;
+        document.getElementById('editPhoneNumber').value = data.phone_number || '';
+        document.getElementById('editIsActive').checked = data.is_active;
+        
+        // Show the edit modal
+        const editModal = new bootstrap.Modal(document.getElementById('editStaffModal'));
+        editModal.show();
+    })
+    .catch(error => {
+        console.error('Error fetching staff data:', error);
+        alert('Failed to load staff data. Please try again.');
+    });
+}
+
+function deleteStaff(staffId) {
+    if (confirm('Are you sure you want to delete this staff member? This action cannot be undone.')) {
+        // Set the staff ID in the delete form
+        document.getElementById('deleteStaffId').value = staffId;
+        // Submit the delete form
+        document.getElementById('deleteStaffForm').submit();
+    }
+}
+
+// Add this function to handle form submission errors
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to forms to handle submission errors
+    const addForm = document.querySelector('#addStaffModal form');
+    const editForm = document.querySelector('#editStaffModal form');
+    
+    [addForm, editForm].forEach(form => {
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                try {
+                    // Basic validation could go here
+                    return true; // Allow form submission
+                } catch (error) {
+                    e.preventDefault();
+                    alert('Form validation error: ' + error.message);
+                    return false;
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'staff_panel/base.html' %}
+
+{% block staff_content %}
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">Staff Dashboard</h1>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Pending Builds</h6>
+                    <h2 class="card-title mb-0">{{ pending_builds }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Assigned Builds</h6>
+                    <h2 class="card-title mb-0">{{ assigned_builds }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Pending Orders</h6>
+                    <h2 class="card-title mb-0">{{ pending_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Support Tickets</h6>
+                    <h2 class="card-title mb-0">{{ pending_tickets }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="row">
+        <!-- Recent Builds -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Custom Builds</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for build in recent_builds %}
+                        <a href="{% url 'staff_panel:build_detail' build.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ build.name }}</h6>
+                                <small class="text-muted">{{ build.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1">Status: {{ build.get_status_display }}</p>
+                        </a>
+                        {% empty %}
+                        <div class="text-center py-3">
+                            <p class="text-muted mb-0">No recent builds</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Orders</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for order in recent_orders %}
+                        <a href="{% url 'staff_panel:order_detail' order.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Order #{{ order.id }}</h6>
+                                <small class="text-muted">{{ order.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1">Status: {{ order.get_status_display }}</p>
+                        </a>
+                        {% empty %}
+                        <div class="text-center py-3">
+                            <p class="text-muted mb-0">No recent orders</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Support Tickets -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Support Tickets</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for ticket in recent_tickets %}
+                        <a href="{% url 'staff_panel:ticket_detail' ticket.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ ticket.subject }}</h6>
+                                <small class="text-muted">{{ ticket.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1">Status: {{ ticket.get_status_display }}</p>
+                        </a>
+                        {% empty %}
+                        <div class="text-center py-3">
+                            <p class="text-muted mb-0">No recent tickets</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
