@@ -1,6 +1,6 @@
-# PC Shop — Django E-Commerce Platform
+# PC Customization — Django E-Commerce Platform
 
-PC Shop is a Django-based online store built specifically for PC hardware. Customers can browse and buy pre-built PCs or individual components, or use the custom PC builder to pick their own CPU, GPU, RAM, and more — the system checks compatibility and sends the build through an approval and assembly workflow before delivery.
+PC Customization is a Django-based online store built specifically for PC hardware. Customers can browse and buy pre-built PCs or individual components, or use the custom PC builder to pick their own CPU, GPU, RAM, and more — the system checks compatibility and sends the build through an approval and assembly workflow before delivery.
 
 Payments go through Razorpay, supporting UPI, cards, net banking, and cash on delivery for both regular orders and custom builds. A built-in AI chatbot called Vex AI (powered by Google Gemini) helps users with component selection, compatibility questions, and build advice.
 
@@ -85,7 +85,7 @@ chatbot/          # Vex AI chatbot (Gemini-powered)
 
 ```bash
 git clone <repo-url>
-cd pc_shop
+cd pc-customization-shop
 pip install -r requirements.txt
 ```
 
